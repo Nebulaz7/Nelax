@@ -262,7 +262,7 @@ var NelaxPollarService = class {
       address: walletAddress,
       network: STELLAR_NETWORK,
       balances,
-      explorerUrl: `https://testnet.stellar.expert/explorer/testnet/account/${walletAddress}`
+      explorerUrl: `https://stellar.expert/explorer/testnet/account/${walletAddress}`
     };
   }
   /**
@@ -286,7 +286,7 @@ var NelaxPollarService = class {
     return {
       hash,
       status,
-      explorerUrl: `https://testnet.stellar.expert/explorer/testnet/tx/${hash}`,
+      explorerUrl: `https://stellar.expert/explorer/testnet/tx/${hash}`,
       amount,
       asset: assetCode.toUpperCase(),
       destination,
@@ -501,7 +501,7 @@ program.command("verify <code>").description("Verify the received OTP code and r
           success: true,
           walletAddress,
           network: "testnet",
-          explorerUrl: `https://testnet.stellar.expert/explorer/testnet/account/${walletAddress}`
+          explorerUrl: `https://stellar.expert/explorer/testnet/account/${walletAddress}`
         })
       );
     } else {
@@ -509,7 +509,7 @@ program.command("verify <code>").description("Verify the received OTP code and r
       console.log(chalk.whiteBright.bold("Stellar Wallet Address: ") + chalk.cyanBright.bold(walletAddress));
       console.log(chalk.whiteBright.bold("Network:                ") + chalk.magenta("Stellar Testnet"));
       console.log(
-        chalk.whiteBright.bold("Explorer:               ") + chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/account/${walletAddress}`)
+        chalk.whiteBright.bold("Explorer:               ") + chalk.underline.blue(`https://stellar.expert/explorer/testnet/account/${walletAddress}`)
       );
       console.log(chalk.gray("\u2500".repeat(60)));
       console.log(chalk.gray(`Session cached locally at: ${getSessionPath()}`));
@@ -610,7 +610,7 @@ program.command("fund [address]").description("Request 10,000 testnet XLM from S
             address: targetAddress,
             amount: "10000 XLM",
             network: "testnet",
-            explorerUrl: `https://testnet.stellar.expert/explorer/testnet/account/${targetAddress}`
+            explorerUrl: `https://stellar.expert/explorer/testnet/account/${targetAddress}`
           },
           null,
           2
@@ -622,7 +622,7 @@ program.command("fund [address]").description("Request 10,000 testnet XLM from S
       console.log(chalk.whiteBright.bold("Credit:         ") + chalk.green.bold("+10,000.0000000 XLM"));
       console.log(chalk.whiteBright.bold("Network:        ") + chalk.magenta("Stellar Testnet"));
       console.log(
-        chalk.whiteBright.bold("Explorer:       ") + chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/account/${targetAddress}`)
+        chalk.whiteBright.bold("Explorer:       ") + chalk.underline.blue(`https://stellar.expert/explorer/testnet/account/${targetAddress}`)
       );
       console.log(chalk.gray("\u2500".repeat(60)) + "\n");
     }
@@ -694,7 +694,7 @@ program.command("rent <machineId>").description("Autonomously rent a compute nod
       console.log(chalk.whiteBright.bold("Username:       ") + chalk.white(lease.username));
       console.log(chalk.whiteBright.bold("Access Token:   ") + chalk.gray(lease.authToken));
       console.log(chalk.whiteBright.bold("Lease Expiry:   ") + chalk.magenta(lease.leaseExpiresAt));
-      console.log(chalk.whiteBright.bold("Stellar Tx:     ") + chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/tx/${lease.txHash}`));
+      console.log(chalk.whiteBright.bold("Stellar Tx:     ") + chalk.underline.blue(`https://stellar.expert/explorer/testnet/tx/${lease.txHash}`));
       console.log(chalk.gray("\u2500".repeat(60)));
       console.log(chalk.green.bold("Connect Command:"));
       console.log(chalk.black.bgWhite(` ${lease.sshCommand} `));
@@ -769,7 +769,7 @@ program.command("history").description("Display recent transaction history on St
       console.log(
         `${arrow}  ${chalk.bold(amount)} ${chalk.cyan(asset)} ${note} ${chalk.gray(`to/from ${counterparty?.slice(0, 10)}...`)}  ${chalk.gray(time)}`
       );
-      console.log(`      Tx: ${chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/tx/${tx.transaction_hash}`)}`);
+      console.log(`      Tx: ${chalk.underline.blue(`https://stellar.expert/explorer/testnet/tx/${tx.transaction_hash}`)}`);
     }
     console.log(chalk.gray("\u2500".repeat(70)) + "\n");
   } catch (err) {
@@ -810,7 +810,7 @@ ${chalk.yellow.bold("Examples for AI Agents & Developers:")}
   $ ${chalk.white("nelax history")}                             # View on-chain transaction history
   $ ${chalk.white("nelax logout")}                              # Clear local cached session
 
-${chalk.gray("Stellar Testnet Explorer: https://testnet.stellar.expert/explorer/testnet/")}
+${chalk.gray("Stellar Testnet Explorer: https://stellar.expert/explorer/testnet/")}
 `
 );
 if (process.argv.length <= 2) {

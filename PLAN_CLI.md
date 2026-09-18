@@ -124,7 +124,7 @@ We will implement `nelax-cli` in 5 focused, incremental phases:
      nelax pay <testnet-g-address> 1.0 USDC
      nelax history
      ```
-  4. Confirm all transactions appear on `https://testnet.stellar.expert`.
+  4. Confirm all transactions appear on `https://stellar.expert/explorer/testnet`.
 
 ---
 

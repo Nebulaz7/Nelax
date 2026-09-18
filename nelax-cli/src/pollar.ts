@@ -306,7 +306,7 @@ export class NelaxPollarService {
       address: walletAddress,
       network: STELLAR_NETWORK,
       balances,
-      explorerUrl: `https://testnet.stellar.expert/explorer/testnet/account/${walletAddress}`,
+      explorerUrl: `https://stellar.expert/explorer/testnet/account/${walletAddress}`,
     };
   }
 
@@ -337,7 +337,7 @@ export class NelaxPollarService {
     return {
       hash,
       status,
-      explorerUrl: `https://testnet.stellar.expert/explorer/testnet/tx/${hash}`,
+      explorerUrl: `https://stellar.expert/explorer/testnet/tx/${hash}`,
       amount,
       asset: assetCode.toUpperCase(),
       destination,

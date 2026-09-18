@@ -120,7 +120,7 @@ Separately, human-facing:
 - Dashboard (get API keys, set funding mode, configure trustlines): https://dashboard.pollar.xyz
 - Telegram support (team on all week): https://t.me/+eRBh0t5gAeZlMzhh
 - Example app to reference patterns: https://github.com/pollar-xyz/demo-nextjs
-- Stellar testnet explorer (for proving real tx in demo): https://testnet.stellar.expert
+- Stellar testnet explorer (for proving real tx in demo): https://stellar.expert/explorer/testnet
 
 **Hackathon:**
 

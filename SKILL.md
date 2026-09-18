@@ -51,7 +51,7 @@ nelax wallet --json
       "isNative": true
     }
   ],
-  "explorerUrl": "https://testnet.stellar.expert/explorer/testnet/account/GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB"
+  "explorerUrl": "https://stellar.expert/explorer/testnet/account/GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB"
 }
 ```
 
@@ -104,4 +104,4 @@ nelax pay GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB 1.5 XLM --jso
 - Sessions are stored in the user config directory: `~/.nelax/session.json`.
 - Private keys and signing logic are managed through **Pollar's non-custodial smart wallet infrastructure**.
 - Stellar Network: **Stellar Testnet** (`stellar:testnet`).
-- Explorer: `https://testnet.stellar.expert/explorer/testnet/`
+- Explorer: `https://stellar.expert/explorer/testnet/`
