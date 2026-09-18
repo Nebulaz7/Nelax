@@ -1,152 +1,297 @@
-# Nelax — Pollar Hackathon Plan
+# Nelax: Autonomous AI Agent Wallets and x402 Compute Protocol on Stellar
 
+**Track:** Build any app on Pollar  
 **Event:** Pollar Hackathon: Build on Pollar (Boundless)  
-**Track:** "Build any app on Pollar"  
 **Live Application:** [https://nelax.nebulaz.xyz/](https://nelax.nebulaz.xyz/)  
 **Live Compute Marketplace:** [https://nelax.nebulaz.xyz/marketplace](https://nelax.nebulaz.xyz/marketplace)  
-**Live Onboarding & Agent Setup Guide:** [https://nelax.nebulaz.xyz/onboarding](https://nelax.nebulaz.xyz/onboarding)  
+**Agent Onboarding Guide:** [https://nelax.nebulaz.xyz/onboarding](https://nelax.nebulaz.xyz/onboarding)  
 **npm Registry:** [`nelax-cli` on npm](https://www.npmjs.com/package/nelax-cli) (`npx -y nelax-cli discover`)  
 
 ---
 
-## 1. The idea
+## 1. Executive Summary
 
-**Nelax** is infrastructure that lets AI agents create and control their own Stellar wallets — autonomously, with no human clicking through a login flow on their behalf.
+Nelax is financial and resource-provisioning infrastructure built specifically for autonomous AI agents. Powered by Pollar and deployed on the Stellar Testnet, Nelax allows AI agents (Claude Code, OpenClaw, Hermes, Antigravity, and autonomous subagents) to create and control non-custodial Stellar wallets, receive funds, and autonomously lease GPU/cloud compute clusters or access paywalled APIs via the x402 Payment-Required protocol.
 
-The pitch in one line:
+Traditional crypto wallets and payment flows require browser extensions, mobile touchscreens, and manual OTP authorization. When autonomous agents operate in terminal environments, they hit a hard wall: they cannot swipe credit cards or approve wallet popups.
 
-> **AI agents that can log into their own non-custodial wallet, get paid, and pay for things — using nothing but a CLI and their own reasoning.**
-
-Concretely, it's three pieces:
-
-1. **A CLI (`npx nelax`)** — wraps Pollar's email-OTP auth + payments so any agent with shell access can run `nelax login`, `nelax verify`, `nelax wallet`, `nelax pay`, `nelax history`.
-2. **A skill file** — teaches agent frameworks (OpenClaw, Claude Code, etc.) when and how to call the CLI. This is what makes it "plug into your normal agentic framework" rather than a bespoke integration.
-3. **A landing page + live testnet compute marketplace** — human-facing. Explains what Nelax is, how to register an agent, and shows a live view of fake compute machines agents can rent — proving the payment flow is real by watching an agent pay for one on-chain (testnet).
-
-**Why this fits the hackathon well:**
-
-- Most "build any app on Pollar" entries will be human-facing payment apps (tipping, bill splitting). Nelax is a different category — agent-facing infrastructure — which stands out to judges by default.
-- It exercises Pollar's email-OTP flow programmatically and headlessly, which is a real, distinctive use of their SDK.
-- It's a natural extension of work you're already deep in ([[Recoiz]] — agentic wallets on Arbitrum, ANIMA's NFA concept) — same thesis, different rails, so you're not starting cold.
-- Small honest scope: no flagship-track infra dependency, no need for Pollar's team to unblock you mid-build.
+Nelax solves this by delivering:
+- A headless terminal CLI tool (`nelax-cli` on npm) with machine-readable JSON outputs.
+- Autonomous x402 HTTP challenge resolution, converting HTTP 402 responses into on-chain Stellar transactions.
+- A live compute marketplace dashboard featuring real-time cluster telemetry and on-chain verification links.
+- Standardized agent skills (`SKILL.md`) enabling seamless integration into leading AI agent frameworks.
 
 ---
 
-## 2. Architecture
+## 2. Architecture and Interaction Flow
 
-```
-┌─────────────────────┐
-│   Agent (any         │   runs shell commands
-│   framework: OpenClaw,│──────────────┐
-│   Claude Code, etc.)  │              │
-└─────────────────────┘              ▼
-                              ┌───────────────┐
-                              │   nelax CLI    │
-                              │  (npx nelax)   │
-                              └───────┬───────┘
-                                      │ wraps
-                                      ▼
-                          ┌─────────────────────┐
-                          │  @pollar/core (SDK)  │
-                          │  email OTP + runTx   │
-                          └──────────┬───────────┘
-                                     │
-                                     ▼
-                          ┌─────────────────────┐
-                          │   Pollar Server       │
-                          │  (Stellar testnet)    │
-                          └──────────┬───────────┘
-                                     │
-                                     ▼
-                          ┌─────────────────────┐
-                          │  Stellar Testnet      │
-                          │  (G-address wallet)   │
-                          └─────────────────────┘
+The following sequence illustrates how an autonomous agent uses Nelax to resolve an HTTP 402 challenge, settle payment via Pollar on the Stellar Testnet, and unlock compute credentials without human input.
 
-Separately, human-facing:
-┌─────────────────────┐        ┌──────────────────────────┐
-│  Landing page         │◄──────│  Live marketplace UI      │
-│  (what/why/how)       │       │  (fake compute listings,  │
-└─────────────────────┘        │  shows real tx activity)  │
-                                 └──────────────────────────┘
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Agent as AI Agent (CLI / Runtime)
+    participant CLI as Nelax CLI (npx nelax)
+    participant Server as Nelax Resource Server (x402)
+    participant Pollar as Pollar SDK (@pollar/core)
+    participant Stellar as Stellar Testnet (Horizon)
+
+    Agent->>CLI: nelax rent gpu-h100-01
+    CLI->>Server: POST /api/rent/gpu-h100-01
+    Server-->>CLI: HTTP 402 Payment Required (Challenge: 5 XLM)
+    Note over CLI: Detects 402 response & parses payment parameters
+    CLI->>Pollar: Sign and submit payment (5 XLM)
+    Pollar->>Stellar: Broadcast transaction to testnet
+    Stellar-->>Pollar: Transaction confirmed (Tx Hash)
+    Pollar-->>CLI: Return confirmation
+    CLI->>Server: POST /api/rent/gpu-h100-01 (Header: X-402-Payment-Hash)
+    Server->>Stellar: Verify transaction on Horizon ledger
+    Stellar-->>Server: Transaction validated
+    Server-->>CLI: HTTP 200 OK (SSH host, port, credentials)
+    CLI-->>Agent: Output provisioned node access details
 ```
 
-**Session persistence:** CLI caches the authenticated session (token/keys) in `~/.nelax/session.json` after `verify` succeeds, so the agent only logs in once per session and every subsequent `pay`/`wallet`/`history` call reuses it.
+### System Component Architecture
 
-**Compute marketplace:** intentionally fake/decorative on the compute side (no real VM provisioning — that's what [[arbitrum-agentic-wallet]] / Recoiz is building separately). What's real is the payment: `nelax pay` fires an actual Pollar testnet USDC transaction. The marketplace API returns a real `402 Payment Required` until payment clears, then a fake "provisioned" response (IP string, fake status). This is honest scoping — the hard, real part (payment authorization by an autonomous agent) is real; the easy, decorative part (a VM existing) is mocked and labeled as such.
+```mermaid
+graph TD
+    subgraph AgentRuntimes["Agent Runtimes"]
+        Claude["Claude Code"]
+        OpenClaw["OpenClaw"]
+        Hermes["Hermes / Antigravity"]
+    end
 
----
+    subgraph CLIModule["Nelax CLI (nelax-cli)"]
+        Parser["Command Parser (Commander.js)"]
+        X402Client["x402 Resolver Engine"]
+        SessionMgr["Session Store (~/.nelax/session.json)"]
+        HeadlessAdapter["Headless Node Adapter"]
+    end
 
-## 3. Confirmed technical facts (from Pollar docs)
+    subgraph SettlementLayer["Pollar and Stellar Infrastructure"]
+        PollarCore["@pollar/core SDK"]
+        PollarAuth["Pollar Auth Service (Email OTP)"]
+        HorizonNode["Stellar Horizon Testnet"]
+    end
 
-- `@pollar/core` works headless in plain Node — no React required: `new PollarClient({ apiKey, stellarNetwork: 'testnet' })`.
-- Email OTP is a real, exact API:
-  - `sendEmailCode(email: string): Promise<void>` — step 1, sends the code
-  - `verifyEmailCode(code: string): Promise<void>` — step 2, resolves once authenticated
-  - Under the hood: `POST /auth/email` and `POST /auth/email/verify-code`
-- Payments: `runTx('payment', { destination, amount, asset })` — one-shot build/sign/submit. Returns `{ status: 'success' | 'pending' | 'error', ... }`.
-- Balances: `refreshWalletBalance()` / balance state.
-- History: `fetchTxHistory({ limit, offset })`.
-- Keys: use `pub_testnet_...` (safe client-side) — for a CLI tool that's end-user-facing this is fine since it only authorizes user-initiated actions; never ship a `sec_testnet_` key in the CLI package.
-- Testnet rate limit: 1,000 requests/day per key — plenty for a hackathon demo.
-- Wallets are Stellar G-addresses; a base 1 XLM reserve + trustline reserves are sponsored automatically by Pollar (Immediate funding mode recommended for the demo so there's no separate activation step).
+    subgraph WebApp["Nelax Web Platform (nelax-app)"]
+        Catalog["Catalog Discovery API (/api/machines)"]
+        ResourceServer["x402 Resource Server (/api/rent/:id)"]
+        Marketplace["Marketplace UI and Simulator"]
+    end
 
----
-
-## 4. Build plan — next 13 hours
-
-| Time (elapsed)    | Block                         | Tasks                                                                                                                                                                                                                                                                                                                              |
-| ----------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0:00 – 0:30**   | Setup                         | Create Pollar app in dashboard, get `pub_testnet_` key, set funding mode to **Immediate**, configure USDC trustline. Confirm `nelax` + `nelax-cli`/`npm` name still free (already checked: free).                                                                                                                                  |
-| **0:30 – 2:30**   | CLI core                      | Scaffold `nelax` npm package (bin + commander). Implement `login <email>`, `verify <code>`, `wallet`, `pay <dest> <amount> [asset]`, `history`. Session cache in `~/.nelax/session.json`. Test end-to-end against Pollar testnet manually from terminal.                                                                           |
-| **2:30 – 4:00**   | Mock marketplace API          | Small Express/Next API route: `GET /machines` (list fake listings), `POST /rent/:id` gated behind a 402 check — verifies a real Pollar tx hash/payment before returning `200` + fake provisioning JSON.                                                                                                                            |
-| **4:00 – 5:30**   | Wire agent flow end-to-end    | Agent (in Claude Code / OpenClaw) runs `nelax login` → `verify` → queries `/machines` → `nelax pay <marketplace-wallet> <amount>` → confirms with marketplace → gets fake VM back. Run this manually several times until reliable.                                                                                                 |
-| **5:30 – 6:15**   | Skill file                    | Write `SKILL.md`: what Nelax is, when to use each command, expected output shapes, example agent dialogue. This is what makes it "plug and play" for any framework.                                                                                                                                                                |
-| **6:15 – 9:00**   | Landing page + marketplace UI | Next.js page: hero explaining Nelax, "how to register your agent" section (install command + skill link), live marketplace view (listings + status, refreshes to show real payment activity/tx hash link to Stellar Expert testnet). This is your strong suit — move fast, reuse Tailwind/Framer Motion patterns you already have. |
-| **9:00 – 9:45**   | Polish + edge cases           | Handle OTP expiry, wrong code, insufficient balance, network errors gracefully in CLI output (agents need clear text to reason over).                                                                                                                                                                                              |
-| **9:45 – 10:15**  | npm publish                   | Publish `nelax` to npm so `npx nelax` genuinely works for judges without a local clone.                                                                                                                                                                                                                                            |
-| **10:15 – 11:30** | Record demo                   | Script + record: agent (live, in Claude Code or OpenClaw) logging in, paying, renting compute — side by side with the marketplace UI updating and a Stellar Expert testnet link proving the tx.                                                                                                                                    |
-| **11:30 – 12:30** | Submission writeup            | One clear paragraph pitch, architecture diagram (reuse the one above), links: npm package, GitHub repo, live landing page, demo video.                                                                                                                                                                                             |
-| **12:30 – 13:00** | Buffer                        | Bug fixes, resubmission if anything breaks.                                                                                                                                                                                                                                                                                        |
-
----
-
-## 5. Resources
-
-**Pollar:**
-
-- Docs: https://docs.pollar.xyz/
-- Full docs dump: https://docs.pollar.xyz/llms-full.txt
-- Core SDK: `@pollar/core` — https://www.npmjs.com/package/@pollar/core
-- React SDK (only if needed for landing page wallet display): `@pollar/react`
-- Dashboard (get API keys, set funding mode, configure trustlines): https://dashboard.pollar.xyz
-- Telegram support (team on all week): https://t.me/+eRBh0t5gAeZlMzhh
-- Example app to reference patterns: https://github.com/pollar-xyz/demo-nextjs
-- Stellar testnet explorer (for proving real tx in demo): https://stellar.expert/explorer/testnet
-
-**Hackathon:**
-
-- Listing: https://www.boundlessfi.xyz/hackathons/pollar-hackathon-build-on-pollar
-- Submission deadline: Sep 18, 2026, 1:00 PM UTC
-
-**Your own prior art to reuse:**
-
-- [[arbitrum-agentic-wallet]] (Recoiz) — CLI/SDK + skill-file + MCP-wrapper pattern for agent framework compatibility; reuse the same shape here for Nelax's skill file
-- [[anima-sui]] — NFA / agent-identity concepts, useful language for the pitch narrative
-- Design patterns: Tailwind CSS, Framer Motion, shadcn/ui for the landing page + marketplace UI
-
-**CLI dependencies (already installed in scaffold):**
-
-- `commander` — CLI argument parsing
-- `conf` — persistent local config/session storage
-- `chalk` — terminal output styling
-- `ora` — loading spinners
-- `@pollar/core` — the SDK itself
+    AgentRuntimes -->|Shell execution with --json| Parser
+    Parser --> X402Client
+    Parser --> SessionMgr
+    X402Client --> HeadlessAdapter
+    HeadlessAdapter --> PollarCore
+    PollarCore --> PollarAuth
+    PollarCore --> HorizonNode
+    X402Client -->|x402 Negotiation| ResourceServer
+    ResourceServer -->|Ledger Verification| HorizonNode
+    Catalog --> Marketplace
+```
 
 ---
 
-## 6. Open decisions to make before/while building
+## 3. Proof of On-Chain Transactions via Pollar
 
-- **Marketplace realism:** how many fake machines, what fields shown (latency/price/region) — pick simple, e.g. 3 machines, price + fake latency, done.
-- **Team split:** solo vs pulling in help for a couple hours on the landing page while you focus on CLI + agent wiring.
-- **Submission narrative one-liner:** lock this early so the landing page copy and demo script both point at the same phrase.
+Nelax settles all compute rentals and direct transfers on the Stellar Testnet through Pollar. Below are real on-chain payment transactions executed by our CLI and verified on Horizon and Stellar Expert:
+
+- **Provider Wallet Address:** `GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB`
+- **Account Explorer:** [View on Stellar Expert](https://stellar.expert/explorer/testnet/account/GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB)
+- **Pollar App Client Key:** `pub_testnet_077431599670fb80328d36889d95f721`
+
+| Transaction Hash | Amount | Resource / Action | Explorer Link |
+|---|---|---|---|
+| `05c42043f3cf51bd771e49d79caf20347a4a8961d6b9820433a766eb1fd093df` | 1.0 XLM | RTX 4090 Node Lease | [View Tx](https://stellar.expert/explorer/testnet/tx/05c42043f3cf51bd771e49d79caf20347a4a8961d6b9820433a766eb1fd093df) |
+| `8862ffd36572622fb291d3181896b89a7143b179d5445313dead6bb78e4afe20` | 1.0 XLM | RTX 4090 Node Lease | [View Tx](https://stellar.expert/explorer/testnet/tx/8862ffd36572622fb291d3181896b89a7143b179d5445313dead6bb78e4afe20) |
+| `98cddc653871c79cf2373578e18396c77714975a651c0f1a5ccc04afb163ef86` | 20.0 XLM | H100 Cluster Lease | [View Tx](https://stellar.expert/explorer/testnet/tx/98cddc653871c79cf2373578e18396c77714975a651c0f1a5ccc04afb163ef86) |
+| `c8b5f729a3b7f1c7b8b36e9223ca917bb58c4d2ab2c525c1302591ecf3a40c30` | 1.0 XLM | Direct Micro-transfer | [View Tx](https://stellar.expert/explorer/testnet/tx/c8b5f729a3b7f1c7b8b36e9223ca917bb58c4d2ab2c525c1302591ecf3a40c30) |
+| `5eb109dfd0ad6ab37bf82fa977ffc123fd3e8f05b1dcfbd2c0c7c344b1cf8c69` | 20.0 XLM | H100 Compute Lease | [View Tx](https://stellar.expert/explorer/testnet/tx/5eb109dfd0ad6ab37bf82fa977ffc123fd3e8f05b1dcfbd2c0c7c344b1cf8c69) |
+
+---
+
+## 4. Repository Structure
+
+```
+Nelax/
+├── README.md               # Hackathon submission documentation
+├── SKILL.md                # Standardized Agent Skill specification
+├── PLAN_CLI.md             # Technical design for nelax-cli
+├── PLAN_COMPUTE.md         # Technical design for x402 marketplace routes
+│
+├── nelax-cli/              # TypeScript CLI tool (published as nelax-cli on npm)
+│   ├── src/
+│   │   ├── index.ts        # CLI command routing and help formatter
+│   │   ├── pollar.ts       # Headless @pollar/core adapter with Node polyfills
+│   │   ├── x402.ts         # Autonomous HTTP 402 negotiation client
+│   │   ├── session.ts      # Persistent session manager (~/.nelax/session.json)
+│   │   └── types.ts        # Shared TypeScript interfaces
+│   ├── package.json        # Binary metadata and scripts
+│   └── tsup.config.ts      # Binary build configuration
+│
+└── nelax-app/              # Next.js 16 Web Application
+    ├── app/
+    │   ├── page.tsx        # Landing page with animated WebGL shader
+    │   ├── marketplace/    # Live Compute Marketplace UI and x402 simulator
+    │   ├── onboarding/     # Step-by-step agent and developer setup guide
+    │   ├── dashboard/      # Agent spending guardrails and wallet monitor
+    │   └── api/
+    │       ├── machines/   # GET /api/machines (catalog discovery)
+    │       ├── rent/[id]/  # POST/GET/DELETE /api/rent/[id] (x402 server)
+    │       └── wallet/     # GET /api/wallet (Stellar Horizon balance proxy)
+    └── lib/
+        └── compute-store.ts # In-memory cluster inventory and transaction log
+```
+
+---
+
+## 5. CLI Command Reference
+
+The CLI is executable without installation via `npx -y nelax-cli <command>`. Every command supports `--json` for direct parsing by agent frameworks.
+
+### Global Options
+- `-v, --version`: Output the current version of the CLI.
+- `-h, --help`: Display command usage and agent tips.
+
+### Commands
+
+#### 1. Authentication and Activation
+```bash
+# Request email OTP code
+nelax login agent@example.com
+
+# Verify code, deploy non-custodial Stellar wallet, and save session
+nelax verify 123456
+
+# Verify with structured output for agents
+nelax verify 123456 --json
+```
+
+#### 2. Wallet and Balance Inspection
+```bash
+# Human-readable view
+nelax wallet
+
+# Machine-readable JSON output
+nelax wallet --json
+```
+Output Schema:
+```json
+{
+  "address": "GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB",
+  "network": "testnet",
+  "balances": [
+    {
+      "asset": "XLM",
+      "balance": "9958.9999500",
+      "isNative": true
+    }
+  ],
+  "explorerUrl": "https://stellar.expert/explorer/testnet/account/GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB"
+}
+```
+
+#### 3. Stellar Testnet Friendbot Funding
+```bash
+# Top up the active wallet with 10,000 testnet XLM
+nelax fund
+
+# Fund a specific address
+nelax fund GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB
+```
+
+#### 4. Compute Discovery
+```bash
+# View available nodes in cluster
+nelax discover
+
+# Filter only unleased nodes with JSON format
+nelax discover --available --json
+```
+
+#### 5. Autonomous Compute Rental (x402)
+```bash
+# Automatically negotiates 402 challenge, pays on-chain, and prints credentials
+nelax rent gpu-h100-01
+
+# Structured credentials for direct agent consumption
+nelax rent gpu-h100-01 --json
+```
+Provisioned Output:
+```json
+{
+  "machineId": "gpu-h100-01",
+  "name": "NVIDIA H100 80GB SXM5",
+  "ip": "138.199.36.42",
+  "sshPort": 2222,
+  "username": "agent-nelax",
+  "authToken": "lease_sec_99a81f...",
+  "leaseExpiresAt": "2026-09-18T15:15:00.000Z",
+  "txHash": "05c42043f3cf51bd771e49d79caf20347a4a8961d6b9820433a766eb1fd093df",
+  "sshCommand": "ssh -p 2222 agent-nelax@138.199.36.42"
+}
+```
+
+#### 6. Direct Payment and Ledger History
+```bash
+# Send testnet funds directly
+nelax pay GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB 1.5 XLM
+
+# Fetch recent transaction history
+nelax history --limit 5
+```
+
+#### 7. Session Teardown
+```bash
+# Clear local credentials and session
+nelax logout
+```
+
+---
+
+## 6. The x402 Protocol Specification
+
+The x402 protocol enables machine-to-machine commerce over standard HTTP.
+
+1. **Initial Access Attempt:** The agent sends a `POST` or `GET` request to a protected resource (e.g. `/api/rent/gpu-h100-01`).
+2. **Challenge Response:** If no payment proof is present, the server responds with:
+   - Status: `402 Payment Required`
+   - Header: `WWW-Authenticate: X-402 destination="<StellarAddress>", amount="5.0", asset="XLM", network="stellar:testnet"`
+   - Body: JSON challenge containing payment instructions and hardware specs.
+3. **Settlement:** The client uses Pollar to build, sign, and submit the required transaction to the Stellar Testnet ledger.
+4. **Retry with Proof:** The client re-executes the original request with:
+   - Header: `X-402-Payment-Hash: <transaction_hash>`
+   - Header: `Authorization: x402 <transaction_hash>`
+5. **Ledger Verification & Unlocking:** The server queries Stellar Horizon, validates that the transaction succeeded and transferred the expected amount, records the lease, and returns the unlocked payload with HTTP `200 OK`.
+
+---
+
+## 7. Key Engineering Challenges and Solutions
+
+### Headless Execution of @pollar/core
+The `@pollar/core` SDK is primarily designed for client-side browser runtimes and references browser globals (`window`, `localStorage`, `addEventListener`, and CORS Origin policies). When executed by an AI agent inside a Node.js shell, these dependencies fail.
+
+**Solution:** In `nelax-cli/src/pollar.ts`, we implemented a lightweight browser polyfill layer that provides in-memory storage, intercepts `fetch` to attach valid `Origin` headers required by Pollar's API gateway, and suppresses browser-only console warnings. This enables 100% headless operation inside terminal runtimes.
+
+### Machine-Readable Error Recovery
+Language model agents cannot interpret vague terminal strings. When an on-chain transaction fails or a balance is insufficient, standard CLI tools print decorative text that confuses the agent.
+
+**Solution:** Nelax implements structured JSON error envelopes with explicit recovery hints (such as pointing the agent to `nelax fund` when balances are low or clarifying OTP verification stages).
+
+---
+
+## 8. Tech Stack
+
+- **Wallet Infrastructure:** Pollar (`@pollar/core`)
+- **Blockchain Network:** Stellar Testnet (`stellar:testnet`), Horizon REST API, Stellar Expert
+- **CLI Development:** TypeScript, Node.js, Commander.js, Chalk, Ora, Conf, tsup
+- **Web Application:** Next.js 16 (App Router), React 19, Tailwind CSS v4, Lucide React
+- **Agent Integration:** Standard Agent Skill protocol (`SKILL.md`)
+
+---
+
+## 9. License
+
+This project is licensed under the MIT License.
