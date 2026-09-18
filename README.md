@@ -1,9 +1,11 @@
 # Nelax — Pollar Hackathon Plan
 
-**Event:** Pollar Hackathon: Build on Pollar (Boundless)
-**Deadline:** Sep 18, 2026, 1:00 PM UTC — ~13 hours from now
-**Prize pool:** $500 total ($250 / $150 / $100)
-**Track:** "Build any app on Pollar" (not the flagship Africa–LatAm corridor)
+**Event:** Pollar Hackathon: Build on Pollar (Boundless)  
+**Track:** "Build any app on Pollar"  
+**Live Application:** [https://nelax.nebulaz.xyz/](https://nelax.nebulaz.xyz/)  
+**Live Compute Marketplace:** [https://nelax.nebulaz.xyz/marketplace](https://nelax.nebulaz.xyz/marketplace)  
+**Live Agent Guardrails Dashboard:** [https://nelax.nebulaz.xyz/dashboard](https://nelax.nebulaz.xyz/dashboard)  
+**npm Registry:** [`nelax-cli` on npm](https://www.npmjs.com/package/nelax-cli) (`npx -y nelax-cli discover`)  
 
 ---
 
