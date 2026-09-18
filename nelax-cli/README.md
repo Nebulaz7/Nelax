@@ -10,13 +10,15 @@
 Run directly without installation via `npx`:
 
 ```bash
-npx nelax --help
+npx nelax-cli --help
 ```
 
 Or install globally:
 
 ```bash
-npm install -g nelax
+npm install -g nelax-cli
+# Once installed globally, the command is simply `nelax`:
+nelax --help
 ```
 
 ---
