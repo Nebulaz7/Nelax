@@ -6,12 +6,12 @@ This plan details the architecture, API specifications, and frontend design for 
 
 ## 1. Overview & Objectives
 
-* **Target Scope**:
+- **Target Scope**:
   1. `nelax-app/app/api/machines/route.ts` (Compute catalog discovery API)
   2. `nelax-app/app/api/rent/[id]/route.ts` (x402 Payment-Required resource server)
   3. `nelax-app/app/marketplace/page.tsx` (Human & judge-facing marketplace dashboard)
-* **Explicit Boundary**: **Do NOT modify `app/page.tsx`** (preserve user's landing page design intact).
-* **Core Value**: 
+- **Explicit Boundary**: **Do NOT modify `app/page.tsx`** (preserve user's landing page design intact).
+- **Core Value**:
   - Allows autonomous AI agents (`nelax-cli`, Claude Code, OpenClaw, Hermes, Antigravity) to query hardware, receive an HTTP 402 challenge, settle payment on Stellar Testnet via Pollar, and unlock provisioned compute credentials.
   - Provides a live web marketplace showcasing hardware status, specs, pricing, and on-chain lease activity verified on `stellar.expert`.
 
@@ -57,12 +57,13 @@ This plan details the architecture, API specifications, and frontend design for 
 ## 3. Phased Implementation Breakdown
 
 ### Section 1: In-Memory / Local Store for Compute Nodes (`lib/compute-store.ts`)
-* Define catalog of realistic machine configurations:
+
+- Define catalog of realistic machine configurations:
   - **`gpu-h100-01`**: NVIDIA H100 80GB SXM5 (112 vCPU, 480 GB RAM) — `5 XLM` ($1.25)
   - **`gpu-4090-02`**: NVIDIA RTX 4090 24GB (24 vCPU, 64 GB RAM) — `1 XLM` ($0.25)
   - **`apple-m3-03`**: Apple M3 Ultra 128GB Unified Memory (24-Core CPU, 76-Core GPU) — `2.5 XLM` ($0.60)
   - **`cpu-epyc-04`**: AMD EPYC 9654 64-Core (256 GB RAM) — `1 XLM` ($0.25)
-* State tracking:
+- State tracking:
   - `status`: `'available'` | `'leased'`
   - `leaseInfo`: `{ agentWallet, txHash, expiresAt, ip, sshPort, username }`
   - Helper methods: `getMachines()`, `getMachineById(id)`, `leaseMachine(id, agentWallet, txHash)`
@@ -70,13 +71,16 @@ This plan details the architecture, API specifications, and frontend design for 
 ---
 
 ### Section 2: x402 Compute API Routes
+
 #### `GET /api/machines`
-* Returns current machine catalog, availability status, specs, pricing, and active lease records.
+
+- Returns current machine catalog, availability status, specs, pricing, and active lease records.
 
 #### `POST /api/rent/[id]` & `GET /api/rent/[id]`
-* **Step 1: Check Payment Proof**
+
+- **Step 1: Check Payment Proof**
   - Read header `X-402-Payment-Hash` or `Authorization: x402 <hash>`.
-* **Step 2: If Missing -> Issue HTTP 402**
+- **Step 2: If Missing -> Issue HTTP 402**
   - Status code: `402`
   - Headers:
     ```http
@@ -97,7 +101,7 @@ This plan details the architecture, API specifications, and frontend design for 
       }
     }
     ```
-* **Step 3: If Payment Hash Provided -> Verify on Stellar Testnet**
+- **Step 3: If Payment Hash Provided -> Verify on Stellar Testnet**
   - Query Horizon testnet endpoint:
     `https://horizon-testnet.stellar.org/transactions/<txHash>`
   - Verify `successful: true`.
@@ -121,14 +125,15 @@ This plan details the architecture, API specifications, and frontend design for 
 ---
 
 ### Section 3: Marketplace Dashboard UI (`app/marketplace/page.tsx`)
-* **Page Route**:
+
+- **Page Route**:
   - Primary: `/marketplace`
   - Alias / Redirect: Handle `/marketpalce` path to avoid 404 from the initial typo.
-* **Visual Theme**:
+- **Visual Theme**:
   - Sleek dark aesthetic (`#09090b` / `#0f172a`), neon cyber accents (cyan `#06b6d4`, violet `#8b5cf6`, emerald `#10b981`), glassmorphism cards.
-* **Component Architecture**:
+- **Component Architecture**:
   1. **Marketplace Header & Live Network Status**:
-     - Title: `⚡ Nelax Autonomous Compute Marketplace`
+     - Title: `Nelax Autonomous Compute Marketplace`
      - Network Pill: `● Stellar Testnet (Active)` | `● Pollar Relay (Connected)`
      - Summary Stats: Available Nodes, Active Leases, On-chain Volume Settled.
   2. **Hardware Grid / Node Cards**:
@@ -159,6 +164,7 @@ This plan details the architecture, API specifications, and frontend design for 
 ## 5. Verification Plan
 
 ### Automated / CLI Verification
+
 ```bash
 # 1. Test machine catalog
 curl http://localhost:3000/api/machines
@@ -171,6 +177,7 @@ nelax rent gpu-4090-02
 ```
 
 ### Manual Verification
+
 - Open `http://localhost:3000/marketplace` in browser.
 - Verify node cards show live availability.
 - Observe node change status to "Leased by Agent" after CLI rental.
