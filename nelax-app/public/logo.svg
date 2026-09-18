@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" width="100%" height="100%">
+  <!-- Hard neo-brutalist drop shadow (0-blur, solid black) -->
+  <path
+    d="M26 18 H76 C81.523 18 86 22.477 86 28 V78 C86 83.523 81.523 88 76 88 H26 C20.477 88 16 83.523 16 78 V28 C16 22.477 20.477 18 26 18 Z"
+    fill="#000000"
+    transform="translate(6, 6)"
+  />
+
+  <!-- Top 3D Facet (Mint Green #86EFAC) -->
+  <path
+    d="M 22 14 L 30 6 H 80 C 85.5 6 90 10.5 90 16 V 66 L 82 74 H 82 V 22 C 82 17.58 78.42 14 74 14 Z"
+    fill="#86EFAC"
+    stroke="#000000"
+    stroke-width="3.5"
+    stroke-linejoin="round"
+  />
+
+  <!-- Main Front Face (Soft Lilac #D8B4FE) -->
+  <rect
+    x="16"
+    y="14"
+    width="66"
+    height="66"
+    rx="14"
+    fill="#D8B4FE"
+    stroke="#000000"
+    stroke-width="3.5"
+    stroke-linejoin="round"
+  />
+
+  <!-- Minimalist Geometric 'N' (Solid Black with punchy cutout angle) -->
+  <path
+    d="M 33 27 V 67 H 41 V 46 L 57 67 H 65 V 27 H 57 V 48 L 41 27 Z"
+    fill="#000000"
+  />
+</svg>
