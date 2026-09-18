@@ -155,7 +155,37 @@ export class NelaxPollarService {
       throw new Error(verifyData?.message || verifyData?.code || 'Verification failed');
     }
 
-    // 2. Finalize authentication and retrieve wallet
+    // 2. Poll until session status is ready or consumed
+    let statusRes = await originalFetch(
+      `https://sdk.api.pollar.xyz/v1/auth/session/status/${encodeURIComponent(clientSessionId)}/poll`,
+      {
+        headers: {
+          'accept': 'application/json',
+          'x-pollar-api-key': API_KEY,
+          'Origin': DEFAULT_ORIGIN,
+        },
+      }
+    );
+    let statusData: any = await statusRes.json().catch(() => ({}));
+
+    let attempts = 0;
+    while (attempts < 15 && statusData?.content?.status === 'PENDING') {
+      await new Promise((r) => setTimeout(r, 500));
+      statusRes = await originalFetch(
+        `https://sdk.api.pollar.xyz/v1/auth/session/status/${encodeURIComponent(clientSessionId)}/poll`,
+        {
+          headers: {
+            'accept': 'application/json',
+            'x-pollar-api-key': API_KEY,
+            'Origin': DEFAULT_ORIGIN,
+          },
+        }
+      );
+      statusData = await statusRes.json().catch(() => ({}));
+      attempts++;
+    }
+
+    // 3. Finalize authentication and retrieve wallet
     const loginRes = await originalFetch('https://sdk.api.pollar.xyz/v1/auth/login', {
       method: 'POST',
       headers: {
@@ -169,14 +199,22 @@ export class NelaxPollarService {
     });
 
     const loginData: any = await loginRes.json().catch(() => ({}));
+    const content = loginData?.content || {};
     const walletAddress =
-      loginData?.content?.data?.providers?.wallet?.address ||
-      loginData?.content?.walletAddress ||
-      loginData?.content?.data?.wallet?.address ||
-      loginData?.content?.address;
+      content.wallet?.address ||
+      content.wallet?.publicKey ||
+      content.data?.providers?.wallet?.address ||
+      content.data?.wallet?.address ||
+      content.walletAddress ||
+      content.address ||
+      statusData?.content?.wallet?.address ||
+      statusData?.content?.data?.providers?.wallet?.address;
 
     if (!walletAddress) {
-      throw new Error('Authentication succeeded but wallet address was not returned by Pollar.');
+      if (!loginRes.ok) {
+        throw new Error(loginData?.message || loginData?.code || 'Failed to finalize login on Pollar');
+      }
+      throw new Error(`Authentication completed, but no wallet address was extracted: ${JSON.stringify(loginData)}`);
     }
 
     return {
