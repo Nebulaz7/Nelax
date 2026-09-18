@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { BalanceInfo, WalletOverview, PaymentResult } from './types.js';
+import { getSession } from './session.js';
 
 // Load .env from current dir and parent dir
 dotenv.config();
@@ -12,7 +13,10 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const DEFAULT_KEY = 'pub_testnet_077431599670fb80328d36889d95f721';
 const API_KEY = process.env.POLLAR_API_KEY || DEFAULT_KEY;
-const STELLAR_NETWORK = (process.env.STELLAR_NETWORK as 'testnet' | 'mainnet') || 'testnet';
+const STELLAR_NETWORK = (pro
+  
+  
+  process.env.STELLAR_NETWORK as 'testnet' | 'mainnet') || 'testnet';
 const DEFAULT_ORIGIN = process.env.POLLAR_APP_ORIGIN || 'http://localhost:3000';
 
 // Polyfill browser environment for @pollar/core client runtime in Node.js
@@ -42,18 +46,33 @@ console.warn = (...args: any[]) => {
   originalWarn(...args);
 };
 
-// Ensure Node.js fetch sends an Origin header for Pollar's CORS requirements
+// Ensure Node.js fetch sends an Origin header for Pollar's CORS requirements without stripping existing headers
 const originalFetch = globalThis.fetch;
-globalThis.fetch = async (url: RequestInfo | URL, init: RequestInit = {}) => {
-  const urlString = typeof url === 'string' ? url : url instanceof URL ? url.toString() : url.url;
+globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  let urlString: string;
+  let headers: Headers;
+
+  if (input instanceof Request) {
+    urlString = input.url;
+    headers = new Headers(input.headers);
+    if (init?.headers) {
+      new Headers(init.headers).forEach((v, k) => headers.set(k, v));
+    }
+  } else {
+    urlString = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as any).url;
+    headers = new Headers(init?.headers || {});
+  }
+
   if (urlString.includes('pollar.xyz')) {
-    const headers = new Headers(init.headers || {});
     if (!headers.has('Origin')) {
       headers.set('Origin', DEFAULT_ORIGIN);
     }
-    return originalFetch(url, { ...init, headers });
   }
-  return originalFetch(url, init);
+
+  if (input instanceof Request) {
+    return originalFetch(new Request(input, { ...init, headers }));
+  }
+  return originalFetch(input, { ...init, headers });
 };
 
 export class NelaxPollarService {
@@ -311,28 +330,55 @@ export class NelaxPollarService {
   }
 
   /**
-   * Execute a direct on-chain payment (USDC by default)
+   * Execute a direct on-chain payment (USDC by default, or XLM)
    */
   async sendPayment(destination: string, amount: string, assetCode: string = 'USDC'): Promise<PaymentResult> {
+    const session = getSession();
+    if (!session || !session.walletAddress) {
+      throw new Error('Authentication required. Run "nelax login <email>" first.');
+    }
+
     const isNative = assetCode.toUpperCase() === 'XLM';
     const asset = isNative
       ? { type: 'native' as const }
       : {
           type: 'credit_alphanum4' as const,
           code: 'USDC',
-          // Stellar Testnet USDC Issuer
           issuer: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
         };
 
-    // Build and submit payment via Pollar
-    const outcome = await (this.client as any).runTx('payment', {
-      destination,
-      amount,
-      asset,
+    const token = typeof session.sessionToken === 'string' ? session.sessionToken : session.sessionToken?.accessToken;
+
+    const res = await originalFetch('https://sdk.api.pollar.xyz/v1/tx/build-sign-submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-pollar-api-key': API_KEY,
+        'Origin': DEFAULT_ORIGIN,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        address: session.walletAddress,
+        operation: 'payment',
+        params: {
+          destination,
+          amount,
+          asset,
+        },
+        options: {},
+        waitForConfirmation: false,
+      }),
     });
 
-    const hash = outcome?.hash || outcome?.txHash || 'tx_mock_' + Math.random().toString(36).slice(2, 10);
-    const status = outcome?.status === 'error' ? 'error' : 'success';
+    const data: any = await res.json().catch(() => ({}));
+
+    if (!res.ok || !data?.success || !data?.content?.hash) {
+      const errMsg = data?.message || data?.code || data?.content?.resultCode || JSON.stringify(data);
+      throw new Error(`Payment failed: ${errMsg}`);
+    }
+
+    const hash = data.content.hash;
+    const status = data.content.status === 'SUCCESS' ? 'success' : 'pending';
 
     return {
       hash,

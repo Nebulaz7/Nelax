@@ -10,6 +10,51 @@ import { PollarClient, createMemoryAdapter } from "@pollar/core";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+
+// src/session.ts
+import Conf from "conf";
+var config = new Conf({
+  projectName: "nelax",
+  defaults: {
+    network: "testnet",
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    verified: false
+  }
+});
+function getSession() {
+  const address = config.get("walletAddress");
+  const clientSessionId = config.get("clientSessionId");
+  if (!address && !clientSessionId) {
+    return null;
+  }
+  return {
+    email: config.get("email"),
+    clientSessionId,
+    sessionToken: config.get("sessionToken"),
+    walletAddress: address,
+    network: config.get("network") || "testnet",
+    updatedAt: config.get("updatedAt") || (/* @__PURE__ */ new Date()).toISOString(),
+    verified: config.get("verified") ?? false
+  };
+}
+function saveSession(updates) {
+  if (updates.email !== void 0) config.set("email", updates.email);
+  if (updates.clientSessionId !== void 0) config.set("clientSessionId", updates.clientSessionId);
+  if (updates.sessionToken !== void 0) config.set("sessionToken", updates.sessionToken);
+  if (updates.walletAddress !== void 0) config.set("walletAddress", updates.walletAddress);
+  if (updates.network !== void 0) config.set("network", updates.network);
+  if (updates.verified !== void 0) config.set("verified", updates.verified);
+  config.set("updatedAt", (/* @__PURE__ */ new Date()).toISOString());
+  return getSession();
+}
+function clearSession() {
+  config.clear();
+}
+function getSessionPath() {
+  return config.path;
+}
+
+// src/pollar.ts
 dotenv.config();
 var __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -44,16 +89,28 @@ console.warn = (...args) => {
   originalWarn(...args);
 };
 var originalFetch = globalThis.fetch;
-globalThis.fetch = async (url, init = {}) => {
-  const urlString = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
+globalThis.fetch = async (input, init) => {
+  let urlString;
+  let headers;
+  if (input instanceof Request) {
+    urlString = input.url;
+    headers = new Headers(input.headers);
+    if (init?.headers) {
+      new Headers(init.headers).forEach((v, k) => headers.set(k, v));
+    }
+  } else {
+    urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    headers = new Headers(init?.headers || {});
+  }
   if (urlString.includes("pollar.xyz")) {
-    const headers = new Headers(init.headers || {});
     if (!headers.has("Origin")) {
       headers.set("Origin", DEFAULT_ORIGIN);
     }
-    return originalFetch(url, { ...init, headers });
   }
-  return originalFetch(url, init);
+  if (input instanceof Request) {
+    return originalFetch(new Request(input, { ...init, headers }));
+  }
+  return originalFetch(input, { ...init, headers });
 };
 var NelaxPollarService = class {
   client;
@@ -266,23 +323,47 @@ var NelaxPollarService = class {
     };
   }
   /**
-   * Execute a direct on-chain payment (USDC by default)
+   * Execute a direct on-chain payment (USDC by default, or XLM)
    */
   async sendPayment(destination, amount, assetCode = "USDC") {
+    const session = getSession();
+    if (!session || !session.walletAddress) {
+      throw new Error('Authentication required. Run "nelax login <email>" first.');
+    }
     const isNative = assetCode.toUpperCase() === "XLM";
     const asset = isNative ? { type: "native" } : {
       type: "credit_alphanum4",
       code: "USDC",
-      // Stellar Testnet USDC Issuer
       issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"
     };
-    const outcome = await this.client.runTx("payment", {
-      destination,
-      amount,
-      asset
+    const token = typeof session.sessionToken === "string" ? session.sessionToken : session.sessionToken?.accessToken;
+    const res = await originalFetch("https://sdk.api.pollar.xyz/v1/tx/build-sign-submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-pollar-api-key": API_KEY,
+        "Origin": DEFAULT_ORIGIN,
+        ...token ? { "Authorization": `Bearer ${token}` } : {}
+      },
+      body: JSON.stringify({
+        address: session.walletAddress,
+        operation: "payment",
+        params: {
+          destination,
+          amount,
+          asset
+        },
+        options: {},
+        waitForConfirmation: false
+      })
     });
-    const hash = outcome?.hash || outcome?.txHash || "tx_mock_" + Math.random().toString(36).slice(2, 10);
-    const status = outcome?.status === "error" ? "error" : "success";
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.success || !data?.content?.hash) {
+      const errMsg = data?.message || data?.code || data?.content?.resultCode || JSON.stringify(data);
+      throw new Error(`Payment failed: ${errMsg}`);
+    }
+    const hash = data.content.hash;
+    const status = data.content.status === "SUCCESS" ? "success" : "pending";
     return {
       hash,
       status,
@@ -310,49 +391,6 @@ var NelaxPollarService = class {
   }
 };
 var pollarService = new NelaxPollarService();
-
-// src/session.ts
-import Conf from "conf";
-var config = new Conf({
-  projectName: "nelax",
-  defaults: {
-    network: "testnet",
-    updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    verified: false
-  }
-});
-function getSession() {
-  const address = config.get("walletAddress");
-  const clientSessionId = config.get("clientSessionId");
-  if (!address && !clientSessionId) {
-    return null;
-  }
-  return {
-    email: config.get("email"),
-    clientSessionId,
-    sessionToken: config.get("sessionToken"),
-    walletAddress: address,
-    network: config.get("network") || "testnet",
-    updatedAt: config.get("updatedAt") || (/* @__PURE__ */ new Date()).toISOString(),
-    verified: config.get("verified") ?? false
-  };
-}
-function saveSession(updates) {
-  if (updates.email !== void 0) config.set("email", updates.email);
-  if (updates.clientSessionId !== void 0) config.set("clientSessionId", updates.clientSessionId);
-  if (updates.sessionToken !== void 0) config.set("sessionToken", updates.sessionToken);
-  if (updates.walletAddress !== void 0) config.set("walletAddress", updates.walletAddress);
-  if (updates.network !== void 0) config.set("network", updates.network);
-  if (updates.verified !== void 0) config.set("verified", updates.verified);
-  config.set("updatedAt", (/* @__PURE__ */ new Date()).toISOString());
-  return getSession();
-}
-function clearSession() {
-  config.clear();
-}
-function getSessionPath() {
-  return config.path;
-}
 
 // src/x402.ts
 var X402PaymentClient = class {
