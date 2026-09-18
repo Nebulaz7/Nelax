@@ -192,17 +192,41 @@ var NelaxPollarService = class {
     };
   }
   /**
-   * Fetch balances for a wallet address from Pollar, with Stellar Horizon testnet fallback
+   * Request Friendbot funding on Stellar Testnet for an address
+   */
+  async fundTestnetAccount(walletAddress) {
+    try {
+      const res = await originalFetch(`https://friendbot.stellar.org/?addr=${encodeURIComponent(walletAddress)}`);
+      if (res.ok) {
+        return { success: true, alreadyFunded: false, message: "Account successfully activated and funded with 10,000 XLM!" };
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data?.detail?.includes("already funded") || data?.detail?.includes("already exist")) {
+        return { success: true, alreadyFunded: true, message: "Account is already active and funded on Stellar Testnet." };
+      }
+      return { success: false, alreadyFunded: false, message: data?.detail || "Friendbot request failed." };
+    } catch (e) {
+      return { success: false, alreadyFunded: false, message: e.message };
+    }
+  }
+  /**
+   * Fetch balances for a wallet address from Stellar Horizon testnet, with Pollar fallback
    */
   async getWalletOverview(walletAddress) {
     const balances = [];
     try {
-      const pollarBalance = await this.client.getWalletBalance(walletAddress, STELLAR_NETWORK);
-      if (pollarBalance?.balances && Array.isArray(pollarBalance.balances)) {
-        for (const b of pollarBalance.balances) {
+      let res = await originalFetch(`https://horizon-testnet.stellar.org/accounts/${walletAddress}`);
+      if (res.status === 404 && STELLAR_NETWORK === "testnet") {
+        await this.fundTestnetAccount(walletAddress);
+        await new Promise((r) => setTimeout(r, 1200));
+        res = await originalFetch(`https://horizon-testnet.stellar.org/accounts/${walletAddress}`);
+      }
+      if (res.ok) {
+        const accountData = await res.json();
+        for (const b of accountData.balances || []) {
           balances.push({
-            asset: b.asset_code || "XLM",
-            balance: b.balance || "0.00",
+            asset: b.asset_type === "native" ? "XLM" : b.asset_code || "TOKEN",
+            balance: b.balance,
             code: b.asset_code,
             issuer: b.asset_issuer,
             isNative: b.asset_type === "native"
@@ -210,14 +234,15 @@ var NelaxPollarService = class {
         }
       }
     } catch {
+    }
+    if (balances.length === 0) {
       try {
-        const res = await originalFetch(`https://horizon-testnet.stellar.org/accounts/${walletAddress}`);
-        if (res.ok) {
-          const accountData = await res.json();
-          for (const b of accountData.balances || []) {
+        const pollarBalance = await this.client.getWalletBalance(walletAddress, STELLAR_NETWORK);
+        if (pollarBalance?.balances && Array.isArray(pollarBalance.balances)) {
+          for (const b of pollarBalance.balances) {
             balances.push({
-              asset: b.asset_type === "native" ? "XLM" : b.asset_code || "TOKEN",
-              balance: b.balance,
+              asset: b.asset_code || "XLM",
+              balance: b.balance || "0.00",
               code: b.asset_code,
               issuer: b.asset_issuer,
               isNative: b.asset_type === "native"
@@ -467,6 +492,8 @@ program.command("verify <code>").description("Verify the received OTP code and r
       verified: true,
       network: "testnet"
     });
+    pollarService.fundTestnetAccount(walletAddress).catch(() => {
+    });
     spinner.succeed(chalk.green.bold("Authentication successful! Wallet active."));
     if (options.json) {
       console.log(
@@ -498,6 +525,23 @@ Tip: Run ${chalk.bold("nelax wallet")} to view your testnet USDC balance.
     process.exit(1);
   }
 });
+function createSpinner(text, isJson) {
+  if (isJson) {
+    return {
+      text: "",
+      start: function() {
+        return this;
+      },
+      stop: () => {
+      },
+      succeed: () => {
+      },
+      fail: () => {
+      }
+    };
+  }
+  return ora(chalk.blue(text)).start();
+}
 program.command("wallet").alias("balance").description("Inspect current wallet address, testnet USDC and XLM balances").option("--json", "Output result in JSON format").action(async (options) => {
   const session = getSession();
   if (!session || !session.walletAddress) {
@@ -510,7 +554,7 @@ program.command("wallet").alias("balance").description("Inspect current wallet a
     }
     process.exit(1);
   }
-  const spinner = ora(chalk.blue("Fetching Stellar testnet balances...")).start();
+  const spinner = createSpinner("Fetching Stellar testnet balances...", options.json);
   try {
     const overview = await pollarService.getWalletOverview(session.walletAddress);
     spinner.stop();
@@ -535,15 +579,71 @@ program.command("wallet").alias("balance").description("Inspect current wallet a
     process.exit(1);
   }
 });
+program.command("fund [address]").description("Request 10,000 testnet XLM from Stellar Friendbot to activate or top up a wallet").option("--json", "Output result in JSON format").action(async (addressArg, options) => {
+  const session = getSession();
+  const targetAddress = addressArg || session?.walletAddress;
+  if (!targetAddress) {
+    if (options?.json) {
+      console.log(JSON.stringify({ error: "No wallet address specified and no active session found." }));
+    } else {
+      console.log(chalk.red("\nNo wallet address specified and no active session found!"));
+      console.log(chalk.yellow("Usage: nelax fund [stellar_address] or run nelax login <email> first.\n"));
+    }
+    process.exit(1);
+  }
+  const spinner = createSpinner(`Checking / requesting Friendbot testnet funds for ${targetAddress.slice(0, 10)}...`, options?.json);
+  try {
+    const fundResult = await pollarService.fundTestnetAccount(targetAddress);
+    if (!fundResult.success) {
+      throw new Error(fundResult.message);
+    }
+    if (fundResult.alreadyFunded) {
+      spinner.succeed(chalk.cyan.bold("Wallet is already active and funded on Stellar Testnet!"));
+    } else {
+      spinner.succeed(chalk.green.bold("Successfully funded via Stellar Testnet Friendbot! (+10,000 XLM)"));
+    }
+    if (options?.json) {
+      console.log(
+        JSON.stringify(
+          {
+            success: true,
+            address: targetAddress,
+            amount: "10000 XLM",
+            network: "testnet",
+            explorerUrl: `https://testnet.stellar.expert/explorer/testnet/account/${targetAddress}`
+          },
+          null,
+          2
+        )
+      );
+    } else {
+      console.log("\n" + chalk.gray("\u2500".repeat(60)));
+      console.log(chalk.whiteBright.bold("Funded Address: ") + chalk.cyanBright.bold(targetAddress));
+      console.log(chalk.whiteBright.bold("Credit:         ") + chalk.green.bold("+10,000.0000000 XLM"));
+      console.log(chalk.whiteBright.bold("Network:        ") + chalk.magenta("Stellar Testnet"));
+      console.log(
+        chalk.whiteBright.bold("Explorer:       ") + chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/account/${targetAddress}`)
+      );
+      console.log(chalk.gray("\u2500".repeat(60)) + "\n");
+    }
+  } catch (err) {
+    spinner.fail(chalk.red(`Funding failed: ${err.message}`));
+    if (options?.json) {
+      console.log(JSON.stringify({ success: false, error: err.message }));
+    }
+    process.exit(1);
+  }
+});
 program.command("pay <destination> <amount> [asset]").description("Send direct on-chain testnet payment to any Stellar address (defaults to USDC)").option("--json", "Output result in JSON format").action(async (destination, amount, asset = "USDC", options) => {
   const session = getSession();
   if (!session || !session.walletAddress) {
     console.log(chalk.red("\nAuthentication required. Run nelax login <email> first.\n"));
     process.exit(1);
   }
-  const spinner = ora(
-    chalk.blue(`Submitting on-chain payment of ${chalk.bold(amount)} ${chalk.bold(asset.toUpperCase())} to ${destination.slice(0, 8)}...`)
-  ).start();
+  const spinner = createSpinner(
+    `Submitting on-chain payment of ${amount} ${asset.toUpperCase()} to ${destination.slice(0, 8)}...`,
+    options.json
+  );
   try {
     const result = await pollarService.sendPayment(destination, amount, asset);
     spinner.succeed(chalk.green.bold("Transaction confirmed on Stellar Testnet!"));
@@ -573,12 +673,12 @@ program.command("rent <machineId>").description("Autonomously rent a compute nod
     process.exit(1);
   }
   const endpointUrl = `${options.url.replace(/\/$/, "")}/api/rent/${encodeURIComponent(machineId)}`;
-  const spinner = ora(chalk.blue(`Requesting compute machine ${chalk.bold(machineId)}...`)).start();
+  const spinner = createSpinner(`Requesting compute machine ${machineId}...`, options.json);
   try {
     const lease = await x402Client.rentCompute(endpointUrl, session, {
       method: "POST",
       onStatus: (msg) => {
-        spinner.text = chalk.blue(msg);
+        if (!options.json) spinner.text = chalk.blue(msg);
       }
     });
     spinner.succeed(chalk.green.bold(`Compute Node [${machineId}] successfully provisioned via x402!`));
@@ -614,12 +714,12 @@ program.command("fetch <url>").description("Perform an autonomous x402 HTTP fetc
     console.log(chalk.red("\nAuthentication required. Run nelax login <email> first.\n"));
     process.exit(1);
   }
-  const spinner = ora(chalk.blue(`Initiating x402 fetch to ${url}...`)).start();
+  const spinner = createSpinner(`Initiating x402 fetch to ${url}...`, options.json);
   try {
     const result = await x402Client.rentCompute(url, session, {
       method: options.method.toUpperCase(),
       onStatus: (msg) => {
-        spinner.text = chalk.blue(msg);
+        if (!options.json) spinner.text = chalk.blue(msg);
       }
     });
     spinner.succeed(chalk.green.bold("x402 Resource request unlocked!"));
@@ -635,7 +735,7 @@ program.command("history").description("Display recent transaction history on St
     console.log(chalk.red("\nAuthentication required. Run nelax login <email> first.\n"));
     process.exit(1);
   }
-  const spinner = ora(chalk.blue("Querying transaction history on Stellar Testnet...")).start();
+  const spinner = createSpinner("Querying transaction history on Stellar Testnet...", options.json);
   try {
     const limit = parseInt(options.limit, 10) || 10;
     const res = await fetch(`https://horizon-testnet.stellar.org/accounts/${session.walletAddress}/payments?limit=${limit}&order=desc`);
@@ -658,12 +758,17 @@ program.command("history").description("Display recent transaction history on St
     console.log(chalk.cyanBright.bold(`Recent Payments (Stellar Testnet) - Showing ${records.length} items`));
     console.log(chalk.gray("\u2500".repeat(70)));
     for (const tx of records) {
-      const isOutgoing = tx.from === session.walletAddress;
+      const isCreateAccount = tx.type === "create_account";
+      const amount = isCreateAccount ? tx.starting_balance : tx.amount;
+      const isOutgoing = isCreateAccount ? false : tx.from === session.walletAddress;
       const arrow = isOutgoing ? chalk.red("\u25B2 SENT") : chalk.green("\u25BC RECV");
-      const asset = tx.asset_type === "native" ? "XLM" : tx.asset_code || "TOKEN";
-      const counterparty = isOutgoing ? tx.to : tx.from;
+      const asset = isCreateAccount || tx.asset_type === "native" ? "XLM" : tx.asset_code || "TOKEN";
+      const counterparty = isCreateAccount ? tx.funder : isOutgoing ? tx.to : tx.from;
       const time = new Date(tx.created_at).toLocaleString();
-      console.log(`${arrow}  ${chalk.bold(tx.amount)} ${chalk.cyan(asset)}  ${chalk.gray(`to/from ${counterparty?.slice(0, 10)}...`)}  ${chalk.gray(time)}`);
+      const note = isCreateAccount ? chalk.yellow("(Genesis/Friendbot)") : "";
+      console.log(
+        `${arrow}  ${chalk.bold(amount)} ${chalk.cyan(asset)} ${note} ${chalk.gray(`to/from ${counterparty?.slice(0, 10)}...`)}  ${chalk.gray(time)}`
+      );
       console.log(`      Tx: ${chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/tx/${tx.transaction_hash}`)}`);
     }
     console.log(chalk.gray("\u2500".repeat(70)) + "\n");

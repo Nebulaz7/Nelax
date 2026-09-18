@@ -70,6 +70,9 @@ program
         network: 'testnet',
       });
 
+      // Ensure account is activated on Stellar Testnet ledger via Friendbot
+      pollarService.fundTestnetAccount(walletAddress).catch(() => {});
+
       spinner.succeed(chalk.green.bold('Authentication successful! Wallet active.'));
 
       if (options.json) {
@@ -102,6 +105,20 @@ program
     }
   });
 
+// Helper to create spinner only when not outputting pure JSON
+function createSpinner(text: string, isJson?: boolean) {
+  if (isJson) {
+    return {
+      text: '',
+      start: function () { return this; },
+      stop: () => {},
+      succeed: () => {},
+      fail: () => {},
+    };
+  }
+  return ora(chalk.blue(text)).start();
+}
+
 // ==========================================
 // Command: WALLET / BALANCE
 // ==========================================
@@ -122,7 +139,7 @@ program
       process.exit(1);
     }
 
-    const spinner = ora(chalk.blue('Fetching Stellar testnet balances...')).start();
+    const spinner = createSpinner('Fetching Stellar testnet balances...', options.json);
     try {
       const overview = await pollarService.getWalletOverview(session.walletAddress);
       spinner.stop();
@@ -150,6 +167,74 @@ program
   });
 
 // ==========================================
+// Command: FUND (Stellar Testnet Friendbot)
+// ==========================================
+program
+  .command('fund [address]')
+  .description('Request 10,000 testnet XLM from Stellar Friendbot to activate or top up a wallet')
+  .option('--json', 'Output result in JSON format')
+  .action(async (addressArg?: string, options?: { json?: boolean }) => {
+    const session = getSession();
+    const targetAddress = addressArg || session?.walletAddress;
+
+    if (!targetAddress) {
+      if (options?.json) {
+        console.log(JSON.stringify({ error: 'No wallet address specified and no active session found.' }));
+      } else {
+        console.log(chalk.red('\nNo wallet address specified and no active session found!'));
+        console.log(chalk.yellow('Usage: nelax fund [stellar_address] or run nelax login <email> first.\n'));
+      }
+      process.exit(1);
+    }
+
+    const spinner = createSpinner(`Checking / requesting Friendbot testnet funds for ${targetAddress.slice(0, 10)}...`, options?.json);
+    try {
+      const fundResult = await pollarService.fundTestnetAccount(targetAddress);
+      if (!fundResult.success) {
+        throw new Error(fundResult.message);
+      }
+
+      if (fundResult.alreadyFunded) {
+        spinner.succeed(chalk.cyan.bold('Wallet is already active and funded on Stellar Testnet!'));
+      } else {
+        spinner.succeed(chalk.green.bold('Successfully funded via Stellar Testnet Friendbot! (+10,000 XLM)'));
+      }
+
+      if (options?.json) {
+        console.log(
+          JSON.stringify(
+            {
+              success: true,
+              address: targetAddress,
+              amount: '10000 XLM',
+              network: 'testnet',
+              explorerUrl: `https://testnet.stellar.expert/explorer/testnet/account/${targetAddress}`,
+            },
+            null,
+            2
+          )
+        );
+      } else {
+        console.log('\n' + chalk.gray('─'.repeat(60)));
+        console.log(chalk.whiteBright.bold('Funded Address: ') + chalk.cyanBright.bold(targetAddress));
+        console.log(chalk.whiteBright.bold('Credit:         ') + chalk.green.bold('+10,000.0000000 XLM'));
+        console.log(chalk.whiteBright.bold('Network:        ') + chalk.magenta('Stellar Testnet'));
+        console.log(
+          chalk.whiteBright.bold('Explorer:       ') +
+            chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/account/${targetAddress}`)
+        );
+        console.log(chalk.gray('─'.repeat(60)) + '\n');
+      }
+    } catch (err: any) {
+      spinner.fail(chalk.red(`Funding failed: ${err.message}`));
+      if (options?.json) {
+        console.log(JSON.stringify({ success: false, error: err.message }));
+      }
+      process.exit(1);
+    }
+  });
+
+// ==========================================
 // Command: PAY (Direct P2P Payment)
 // ==========================================
 program
@@ -163,9 +248,10 @@ program
       process.exit(1);
     }
 
-    const spinner = ora(
-      chalk.blue(`Submitting on-chain payment of ${chalk.bold(amount)} ${chalk.bold(asset.toUpperCase())} to ${destination.slice(0, 8)}...`)
-    ).start();
+    const spinner = createSpinner(
+      `Submitting on-chain payment of ${amount} ${asset.toUpperCase()} to ${destination.slice(0, 8)}...`,
+      options.json
+    );
 
     try {
       const result = await pollarService.sendPayment(destination, amount, asset);
@@ -207,13 +293,13 @@ program
     }
 
     const endpointUrl = `${options.url.replace(/\/$/, '')}/api/rent/${encodeURIComponent(machineId)}`;
-    const spinner = ora(chalk.blue(`Requesting compute machine ${chalk.bold(machineId)}...`)).start();
+    const spinner = createSpinner(`Requesting compute machine ${machineId}...`, options.json);
 
     try {
       const lease = await x402Client.rentCompute(endpointUrl, session, {
         method: 'POST',
         onStatus: (msg) => {
-          spinner.text = chalk.blue(msg);
+          if (!options.json) spinner.text = chalk.blue(msg);
         },
       });
 
@@ -261,12 +347,12 @@ program
       process.exit(1);
     }
 
-    const spinner = ora(chalk.blue(`Initiating x402 fetch to ${url}...`)).start();
+    const spinner = createSpinner(`Initiating x402 fetch to ${url}...`, options.json);
     try {
       const result = await x402Client.rentCompute(url, session, {
         method: options.method.toUpperCase() as 'GET' | 'POST',
         onStatus: (msg) => {
-          spinner.text = chalk.blue(msg);
+          if (!options.json) spinner.text = chalk.blue(msg);
         },
       });
 
@@ -293,7 +379,7 @@ program
       process.exit(1);
     }
 
-    const spinner = ora(chalk.blue('Querying transaction history on Stellar Testnet...')).start();
+    const spinner = createSpinner('Querying transaction history on Stellar Testnet...', options.json);
     try {
       const limit = parseInt(options.limit, 10) || 10;
       const res = await fetch(`https://horizon-testnet.stellar.org/accounts/${session.walletAddress}/payments?limit=${limit}&order=desc`);
@@ -322,13 +408,18 @@ program
       console.log(chalk.gray('─'.repeat(70)));
 
       for (const tx of records) {
-        const isOutgoing = tx.from === session.walletAddress;
+        const isCreateAccount = tx.type === 'create_account';
+        const amount = isCreateAccount ? tx.starting_balance : tx.amount;
+        const isOutgoing = isCreateAccount ? false : tx.from === session.walletAddress;
         const arrow = isOutgoing ? chalk.red('▲ SENT') : chalk.green('▼ RECV');
-        const asset = tx.asset_type === 'native' ? 'XLM' : tx.asset_code || 'TOKEN';
-        const counterparty = isOutgoing ? tx.to : tx.from;
+        const asset = isCreateAccount || tx.asset_type === 'native' ? 'XLM' : tx.asset_code || 'TOKEN';
+        const counterparty = isCreateAccount ? tx.funder : isOutgoing ? tx.to : tx.from;
         const time = new Date(tx.created_at).toLocaleString();
+        const note = isCreateAccount ? chalk.yellow('(Genesis/Friendbot)') : '';
 
-        console.log(`${arrow}  ${chalk.bold(tx.amount)} ${chalk.cyan(asset)}  ${chalk.gray(`to/from ${counterparty?.slice(0, 10)}...`)}  ${chalk.gray(time)}`);
+        console.log(
+          `${arrow}  ${chalk.bold(amount)} ${chalk.cyan(asset)} ${note} ${chalk.gray(`to/from ${counterparty?.slice(0, 10)}...`)}  ${chalk.gray(time)}`
+        );
         console.log(`      Tx: ${chalk.underline.blue(`https://testnet.stellar.expert/explorer/testnet/tx/${tx.transaction_hash}`)}`);
       }
       console.log(chalk.gray('─'.repeat(70)) + '\n');

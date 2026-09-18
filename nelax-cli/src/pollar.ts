@@ -224,43 +224,73 @@ export class NelaxPollarService {
   }
 
   /**
-   * Fetch balances for a wallet address from Pollar, with Stellar Horizon testnet fallback
+   * Request Friendbot funding on Stellar Testnet for an address
+   */
+  async fundTestnetAccount(walletAddress: string): Promise<{ success: boolean; alreadyFunded: boolean; message: string }> {
+    try {
+      const res = await originalFetch(`https://friendbot.stellar.org/?addr=${encodeURIComponent(walletAddress)}`);
+      if (res.ok) {
+        return { success: true, alreadyFunded: false, message: 'Account successfully activated and funded with 10,000 XLM!' };
+      }
+      const data: any = await res.json().catch(() => ({}));
+      if (data?.detail?.includes('already funded') || data?.detail?.includes('already exist')) {
+        return { success: true, alreadyFunded: true, message: 'Account is already active and funded on Stellar Testnet.' };
+      }
+      return { success: false, alreadyFunded: false, message: data?.detail || 'Friendbot request failed.' };
+    } catch (e: any) {
+      return { success: false, alreadyFunded: false, message: e.message };
+    }
+  }
+
+  /**
+   * Fetch balances for a wallet address from Stellar Horizon testnet, with Pollar fallback
    */
   async getWalletOverview(walletAddress: string): Promise<WalletOverview> {
     const balances: BalanceInfo[] = [];
 
-    // Attempt 1: Pollar SDK balance check
+    // Attempt 1: Direct Horizon Testnet query (live on-chain source of truth)
     try {
-      const pollarBalance = await this.client.getWalletBalance(walletAddress, STELLAR_NETWORK);
-      if (pollarBalance?.balances && Array.isArray(pollarBalance.balances)) {
-        for (const b of pollarBalance.balances) {
+      let res = await originalFetch(`https://horizon-testnet.stellar.org/accounts/${walletAddress}`);
+      if (res.status === 404 && STELLAR_NETWORK === 'testnet') {
+        // Automatically activate new account on Stellar Testnet ledger via Friendbot
+        await this.fundTestnetAccount(walletAddress);
+        await new Promise((r) => setTimeout(r, 1200));
+        res = await originalFetch(`https://horizon-testnet.stellar.org/accounts/${walletAddress}`);
+      }
+
+      if (res.ok) {
+        const accountData: any = await res.json();
+        for (const b of accountData.balances || []) {
           balances.push({
-            asset: (b as any).asset_code || 'XLM',
-            balance: (b as any).balance || '0.00',
-            code: (b as any).asset_code,
-            issuer: (b as any).asset_issuer,
-            isNative: (b as any).asset_type === 'native',
+            asset: b.asset_type === 'native' ? 'XLM' : b.asset_code || 'TOKEN',
+            balance: b.balance,
+            code: b.asset_code,
+            issuer: b.asset_issuer,
+            isNative: b.asset_type === 'native',
           });
         }
       }
     } catch {
-      // Attempt 2: Direct Horizon Testnet fallback query
+      // Horizon query fallback
+    }
+
+    // Attempt 2: Pollar SDK balance check if Horizon was empty
+    if (balances.length === 0) {
       try {
-        const res = await originalFetch(`https://horizon-testnet.stellar.org/accounts/${walletAddress}`);
-        if (res.ok) {
-          const accountData: any = await res.json();
-          for (const b of accountData.balances || []) {
+        const pollarBalance = await this.client.getWalletBalance(walletAddress, STELLAR_NETWORK);
+        if (pollarBalance?.balances && Array.isArray(pollarBalance.balances)) {
+          for (const b of pollarBalance.balances) {
             balances.push({
-              asset: b.asset_type === 'native' ? 'XLM' : b.asset_code || 'TOKEN',
-              balance: b.balance,
-              code: b.asset_code,
-              issuer: b.asset_issuer,
-              isNative: b.asset_type === 'native',
+              asset: (b as any).asset_code || 'XLM',
+              balance: (b as any).balance || '0.00',
+              code: (b as any).asset_code,
+              issuer: (b as any).asset_issuer,
+              isNative: (b as any).asset_type === 'native',
             });
           }
         }
       } catch {
-        // Account might not be funded on-chain yet
+        // Account unfunded placeholder
       }
     }
 
