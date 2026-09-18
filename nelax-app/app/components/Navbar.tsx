@@ -21,7 +21,7 @@ export default function Navbar() {
     { name: "How it Works", href: "#about", isRoute: false },
     { name: "Features", href: "#features", isRoute: false },
     { name: "Marketplace", href: "/marketplace", isRoute: true },
-    { name: "Dashboard", href: "/dashboard", isRoute: true },
+    { name: "Guide", href: "/onboarding", isRoute: true },
     { name: "FAQ", href: "#faq", isRoute: false },
   ];
 
@@ -79,10 +79,10 @@ export default function Navbar() {
         {/* Right: Desktop CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/dashboard"
+            href="/onboarding"
             className="text-gray-300 hover:text-white text-sm font-medium px-4 py-2 transition-colors cursor-pointer"
           >
-            Dashboard
+            Setup Guide
           </Link>
           <Link
             href="/marketplace"
@@ -145,11 +145,11 @@ export default function Navbar() {
               Launch Marketplace
             </Link>
             <Link
-              href="/dashboard"
+              href="/onboarding"
               onClick={() => setMobileMenuOpen(false)}
               className="text-center bg-[#1F1F22] hover:bg-[#2A2A2D] text-white text-sm font-medium px-5 py-3 rounded-full border border-white/10 transition-colors"
             >
-              Agent Guardrails Dashboard
+              Agent Setup Guide
             </Link>
           </div>
         </div>

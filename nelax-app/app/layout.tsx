@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nelax — Autonomous AI Agent Wallets & x402 Compute on Stellar",
+  title: "Nelax - Autonomous AI Agent Wallets & x402 Compute on Stellar",
   description:
     "Cryptographic autonomy for AI agents. Non-custodial Stellar agent wallets, x402 micropayments for GPU clusters, and real-time spending guardrails.",
 };

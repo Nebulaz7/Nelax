@@ -4,7 +4,7 @@
 **Track:** "Build any app on Pollar"  
 **Live Application:** [https://nelax.nebulaz.xyz/](https://nelax.nebulaz.xyz/)  
 **Live Compute Marketplace:** [https://nelax.nebulaz.xyz/marketplace](https://nelax.nebulaz.xyz/marketplace)  
-**Live Agent Guardrails Dashboard:** [https://nelax.nebulaz.xyz/dashboard](https://nelax.nebulaz.xyz/dashboard)  
+**Live Onboarding & Agent Setup Guide:** [https://nelax.nebulaz.xyz/onboarding](https://nelax.nebulaz.xyz/onboarding)  
 **npm Registry:** [`nelax-cli` on npm](https://www.npmjs.com/package/nelax-cli) (`npx -y nelax-cli discover`)  
 
 ---

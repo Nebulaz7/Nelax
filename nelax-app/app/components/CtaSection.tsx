@@ -62,10 +62,10 @@ export default function CtaSection() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/dashboard"
+              href="/onboarding"
               className="w-full sm:w-auto bg-[#1F1F22] hover:bg-[#2A2A2D] text-white text-sm font-medium px-7 py-3.5 rounded-full border border-white/10 transition-colors cursor-pointer"
             >
-              Agent Guardrails Dashboard
+              Agent Setup Guide
             </Link>
           </div>
 

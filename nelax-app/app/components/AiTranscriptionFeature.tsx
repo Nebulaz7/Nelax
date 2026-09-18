@@ -109,10 +109,10 @@ export default function AiTranscriptionFeature() {
           </p>
 
           <Link
-            href="/dashboard"
+            href="/onboarding"
             className="mt-2 bg-white hover:bg-gray-100 text-black text-sm font-medium px-6 py-3 rounded-full transition-colors cursor-pointer flex items-center gap-2"
           >
-            <span>Open Guardrail Dashboard</span>
+            <span>View Setup Guide</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </FadeInUp>
