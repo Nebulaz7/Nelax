@@ -154,10 +154,10 @@ This plan details the architecture, API specifications, and frontend design for 
 
 ## 4. Execution Checkpoints
 
-- [ ] **Checkpoint 1**: Create `nelax-app/lib/compute-store.ts` (Node definitions & lease state).
-- [ ] **Checkpoint 2**: Create `nelax-app/app/api/machines/route.ts` & `nelax-app/app/api/rent/[id]/route.ts` with real Horizon testnet payment verification.
-- [ ] **Checkpoint 3**: Build `nelax-app/app/marketplace/page.tsx` with dynamic node list, filtering, live status, and activity feed.
-- [ ] **Checkpoint 4**: End-to-end test: Run `nelax rent gpu-4090-02` from CLI -> confirm HTTP 402 challenge is received -> payment executed on Stellar Testnet -> machine is unlocked and marked rented on `/marketplace`.
+- [x] **Checkpoint 1**: Create `nelax-app/lib/compute-store.ts` (Node definitions & lease state).
+- [x] **Checkpoint 2**: Create `nelax-app/app/api/machines/route.ts` & `nelax-app/app/api/rent/[id]/route.ts` with real Horizon testnet payment verification.
+- [x] **Checkpoint 3**: Build `nelax-app/app/marketplace/page.tsx` with dynamic node list, filtering, live status, and activity feed.
+- [x] **Checkpoint 4**: End-to-end test: Run `nelax rent gpu-4090-02` from CLI -> confirm HTTP 402 challenge is received -> payment executed on Stellar Testnet -> machine is unlocked and marked rented on `/marketplace`.
 
 ---
 
