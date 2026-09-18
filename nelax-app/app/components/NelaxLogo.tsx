@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 interface NelaxLogoProps {
   size?: number;
@@ -10,7 +10,7 @@ interface NelaxLogoProps {
 
 export default function NelaxLogo({
   size = 28,
-  className = '',
+  className = "",
   showText = true,
 }: NelaxLogoProps) {
   return (
@@ -51,9 +51,6 @@ export default function NelaxLogo({
       {showText && (
         <span className="text-xl font-bold tracking-tight text-white font-sans flex items-center gap-1.5">
           Nelax
-          <span className="text-[10px] uppercase font-mono tracking-widest px-1.5 py-0.5 rounded bg-white/10 text-gray-400 font-normal">
-            Protocol
-          </span>
         </span>
       )}
     </div>

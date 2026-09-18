@@ -154,22 +154,16 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#07090e] text-zinc-100 selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* Ambient background glows */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-32 left-1/3 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 right-10 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293710_1px,transparent_1px),linear-gradient(to_bottom,#1f293710_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-      </div>
+      {/* Background */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#07090e]" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-8">
         
         {/* HEADER */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-600 p-[1px] shadow-lg shadow-cyan-500/20">
-              <div className="w-full h-full bg-[#090d16] rounded-xl flex items-center justify-center">
-                <Sliders className="w-5 h-5 text-cyan-400" />
-              </div>
+            <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+              <Sliders className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -225,7 +219,7 @@ export default function DashboardPage() {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Main Portfolio Card */}
-          <div className="lg:col-span-2 rounded-2xl border border-zinc-800 bg-gradient-to-b from-[#0e1424]/90 via-[#0a0f1c]/80 to-[#070a12]/90 p-6 md:p-8 backdrop-blur-xl shadow-xl flex flex-col justify-between gap-6">
+          <div className="lg:col-span-2 rounded-2xl border border-zinc-800 bg-[#0D0D0E] p-6 md:p-8 shadow-xl flex flex-col justify-between gap-6">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-xs text-zinc-400 uppercase font-semibold tracking-wider">
@@ -294,7 +288,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Top-Up / Fund Card */}
-          <div className="rounded-2xl border border-zinc-800 bg-gradient-to-b from-[#101422]/90 via-[#0a0f1c]/80 to-[#070a12]/90 p-6 flex flex-col justify-between gap-4 shadow-xl">
+          <div className="rounded-2xl border border-zinc-800 bg-[#0D0D0E] p-6 flex flex-col justify-between gap-4 shadow-xl">
             <div className="flex flex-col gap-2">
               <div className="w-9 h-9 rounded-lg bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center">
                 <Coins className="w-5 h-5 text-emerald-400" />
@@ -315,7 +309,7 @@ export default function DashboardPage() {
             <button
               onClick={handleTopup}
               disabled={funding}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/40"
+              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg"
             >
               {funding ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -427,7 +421,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-violet-500 transition-all duration-300"
+                    className="h-full bg-cyan-400 transition-all duration-300"
                     style={{ width: `${percentDailyUsed}%` }}
                   />
                 </div>
@@ -495,7 +489,7 @@ export default function DashboardPage() {
 
             <button
               onClick={saveSettings}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-400 hover:to-violet-500 text-black font-semibold text-xs transition-colors shadow-lg shadow-cyan-950/40 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-xs transition-colors shadow-lg cursor-pointer"
             >
               {saveSuccess ? (
                 <>
@@ -561,7 +555,7 @@ export default function DashboardPage() {
                                   : 'bg-amber-950 text-amber-300'
                               }`}
                             >
-                              {withinLimit ? '✓ Under Limit' : 'Over Limit'}
+                              {withinLimit ? 'Under Limit' : 'Over Limit'}
                             </span>
                           )}
                         </div>

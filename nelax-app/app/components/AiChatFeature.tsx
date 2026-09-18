@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import FadeInUp from './FadeInUp';
+import { LevShader } from './animations/chroma';
 import { Cpu, CheckCircle2, ArrowRight, ExternalLink, Terminal, Zap } from 'lucide-react';
 
 export default function AiChatFeature() {
@@ -45,26 +46,17 @@ export default function AiChatFeature() {
           </div>
         </FadeInUp>
 
-        {/* Right Column: Floating Mockup with Background Video */}
+        {/* Right Column: Floating Mockup with Shader Background */}
         <FadeInUp delayMs={200} className="w-full">
-          <div className="rounded-3xl overflow-hidden p-6 sm:p-8 border border-white/10 relative min-h-[460px] flex items-end justify-center shadow-2xl">
-            {/* Background Video */}
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 object-cover w-full h-full pointer-events-none"
-            >
-              <source
-                src="https://cdn.sceneai.art/Hero%20Section%20Video/1bcc8fa3-37f6-4c53-8591-0347e4c7f8ac.mp4"
-                type="video/mp4"
-              />
-            </video>
+          <div className="rounded-3xl overflow-hidden p-6 sm:p-8 border border-white/10 relative min-h-[460px] flex items-end justify-center shadow-2xl bg-black">
+            {/* Optimized Chroma Shader Background (No Video, No Gradients) */}
+            <div className="absolute inset-0 pointer-events-none opacity-40 overflow-hidden">
+              <LevShader theme="dark" background={{ dark: "#000000" }} />
+            </div>
             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
             {/* Floating UI Card: x402 Protocol Settlement Inspector with Pollar */}
-            <div className="relative z-10 w-full bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col gap-4 shadow-2xl">
+            <div className="relative z-10 w-full bg-[#1C1C1E]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col gap-4 shadow-2xl">
               {/* Top Chips */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
                 <span className="px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 shrink-0 font-medium">

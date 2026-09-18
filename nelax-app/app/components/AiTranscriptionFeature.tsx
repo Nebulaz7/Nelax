@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import FadeInUp from './FadeInUp';
+import { LevShader } from './animations/chroma';
 import { ShieldCheck, Wallet, ArrowRight, Activity, Sliders } from 'lucide-react';
 
 export default function AiTranscriptionFeature() {
@@ -10,26 +11,17 @@ export default function AiTranscriptionFeature() {
     <section className="py-24 px-6 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         
-        {/* Left Column: Floating Mockup with Background Video */}
+        {/* Left Column: Floating Mockup with Shader Background */}
         <FadeInUp delayMs={0} className="w-full order-2 lg:order-1">
-          <div className="rounded-3xl overflow-hidden p-6 sm:p-8 border border-white/10 relative min-h-[460px] flex items-end justify-center shadow-2xl">
-            {/* Background Video */}
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 object-cover w-full h-full pointer-events-none"
-            >
-              <source
-                src="https://cdn.sceneai.art/Hero%20Section%20Video/736fd4a0-70ac-4f44-9633-55769ead6aca.mp4"
-                type="video/mp4"
-              />
-            </video>
+          <div className="rounded-3xl overflow-hidden p-6 sm:p-8 border border-white/10 relative min-h-[460px] flex items-end justify-center shadow-2xl bg-black">
+            {/* Optimized Chroma Shader Background (No Video, No Gradients) */}
+            <div className="absolute inset-0 pointer-events-none opacity-40 overflow-hidden">
+              <LevShader theme="dark" background={{ dark: "#000000" }} />
+            </div>
             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
             {/* Floating UI Card: Autonomous Agent Guardrail & Pollar Wallet Telemetry */}
-            <div className="relative z-10 w-full bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col gap-4 shadow-2xl">
+            <div className="relative z-10 w-full bg-[#1C1C1E]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col gap-4 shadow-2xl">
               
               {/* Header: Agent Identity & Pollar Session */}
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -104,7 +96,8 @@ export default function AiTranscriptionFeature() {
         {/* Right Column: Text & Content */}
         <FadeInUp delayMs={200} className="flex flex-col items-start gap-6 order-1 lg:order-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-xs font-semibold text-emerald-400">
-            🛡️ Pollar Agent Wallets &amp; Guardrails
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Pollar Agent Wallets &amp; Guardrails</span>
           </div>
 
           <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-white leading-tight">

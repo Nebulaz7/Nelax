@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import FadeInUp from './FadeInUp';
-import { ArrowRight, Terminal, Copy, Check, Sparkles, Zap, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Terminal, Copy, Check } from 'lucide-react';
 
 export default function CtaSection() {
   const [copied, setCopied] = useState(false);
@@ -17,14 +17,11 @@ export default function CtaSection() {
   return (
     <section className="py-24 px-6 max-w-7xl mx-auto">
       <FadeInUp delayMs={0}>
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#121214] to-[#0A0A0B] p-8 sm:p-14 text-center flex flex-col items-center shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0D0D0E] p-8 sm:p-14 text-center flex flex-col items-center shadow-2xl">
           
-          {/* Subtle Background Glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-36 bg-cyan-500/10 blur-[100px] pointer-events-none" />
-
-          {/* Hackathon Badge */}
+          {/* Hackathon Badge without emojis or gradients */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-gray-300 mb-8 backdrop-blur-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Pollar Hackathon 2026 &bull; Stellar Testnet</span>
           </div>
 
@@ -41,15 +38,15 @@ export default function CtaSection() {
 
           {/* Metrics Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl mb-10">
-            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col items-center">
+            <div className="p-4 rounded-xl bg-black/60 border border-white/5 flex flex-col items-center">
               <span className="text-2xl font-bold font-mono text-white">&lt; 3.0s</span>
               <span className="text-xs text-gray-400 mt-1">Stellar Ledger Finality</span>
             </div>
-            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col items-center">
+            <div className="p-4 rounded-xl bg-black/60 border border-white/5 flex flex-col items-center">
               <span className="text-2xl font-bold font-mono text-emerald-400">0 Keys</span>
               <span className="text-xs text-gray-400 mt-1">Exposed (@pollar/core)</span>
             </div>
-            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col items-center">
+            <div className="p-4 rounded-xl bg-black/60 border border-white/5 flex flex-col items-center">
               <span className="text-2xl font-bold font-mono text-cyan-400">&lt; $0.00001</span>
               <span className="text-xs text-gray-400 mt-1">Average Settlement Cost</span>
             </div>

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import NelaxLogo from './NelaxLogo';
 import FadeInUp from './FadeInUp';
+import { LevShader } from './animations/chroma';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
@@ -12,20 +13,10 @@ export default function Footer() {
       id="contact"
       className="relative z-0 pt-32 pb-10 px-6 border-t border-white/5 bg-black text-white overflow-hidden"
     >
-      {/* Background Video with Multi-Stop Gradient Overlay */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 object-cover w-full h-full opacity-40 -z-10 pointer-events-none"
-      >
-        <source
-          src="https://cdn.sceneai.art/Hero%20Section%20Video/50b4f304-cdca-4e12-8735-580d225834be.mp4"
-          type="video/mp4"
-        />
-      </video>
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/60 to-black -z-10 pointer-events-none" />
+      {/* Optimized Chroma Shader Animated Background (No Video, No Gradients) */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none opacity-25">
+        <LevShader theme="dark" background={{ dark: "#000000" }} />
+      </div>
 
       {/* Top CTA Banner */}
       <div className="max-w-4xl mx-auto text-center flex flex-col items-center mb-32">

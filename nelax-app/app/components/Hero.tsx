@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import FadeInUp from "./FadeInUp";
-import { Copy, Check, Terminal, Sparkles, ArrowRight } from "lucide-react";
+import { LevShader } from "./animations/chroma";
+import { Copy, Check, Terminal, ArrowRight } from "lucide-react";
 
 // Stroke-based ecosystem & partner logos featuring Pollar
 const ECOSYSTEM_LOGOS = [
@@ -201,10 +202,21 @@ export default function Hero() {
       id="about"
       className="min-h-screen flex flex-col items-center justify-center pt-32 pb-20 relative z-0 overflow-hidden bg-black text-white"
     >
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/30 via-transparent to-black pointer-events-none" />
+      {/* Optimized Chroma Shader Animated Background (No Video, No Gradients) */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none opacity-40">
+        <LevShader theme="dark" background={{ dark: "#000000" }} />
+      </div>
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-6 flex flex-col items-center text-center">
+        {/* Top Badge without emojis or gradients */}
+        <FadeInUp delayMs={0}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-gray-300 mb-8 backdrop-blur-sm hover:border-white/20 transition-colors">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>Powered by Pollar SDK (@pollar/core) on Stellar</span>
+          </div>
+        </FadeInUp>
+
         {/* Headline */}
         <FadeInUp delayMs={150}>
           <h1 className="text-5xl md:text-7xl font-medium tracking-tight mb-6 text-center leading-[1.1]">
@@ -250,7 +262,7 @@ export default function Hero() {
         <FadeInUp delayMs={600}>
           <button
             onClick={copyCliCommand}
-            className="group flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all font-mono text-xs text-gray-300 cursor-pointer shadow-inner"
+            className="group flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all font-mono text-xs text-gray-300 cursor-pointer"
             title="Click to copy CLI command"
           >
             <Terminal className="w-3.5 h-3.5 text-cyan-400" />
@@ -269,13 +281,13 @@ export default function Hero() {
         </FadeInUp>
       </div>
 
-      {/* Marquee: Powered by Pollar & Decentralized Infrastructure */}
+      {/* Marquee: Powered by Pollar & Decentralized Infrastructure (No Gradient Mask) */}
       <div className="w-full mt-20">
         <p className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-8 text-center">
           Powered by Pollar Protocol &bull; Built for the Pollar Hackathon 2026
         </p>
 
-        <div className="w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]">
+        <div className="w-full overflow-hidden border-y border-white/5 py-4">
           <div className="flex w-max animate-marquee">
             {marqueeItems.map((brand, idx) => (
               <div
