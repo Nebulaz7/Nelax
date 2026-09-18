@@ -13,10 +13,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const DEFAULT_KEY = 'pub_testnet_077431599670fb80328d36889d95f721';
 const API_KEY = process.env.POLLAR_API_KEY || DEFAULT_KEY;
-const STELLAR_NETWORK = (pro
-  
-  
-  process.env.STELLAR_NETWORK as 'testnet' | 'mainnet') || 'testnet';
+const STELLAR_NETWORK =
+  (process.env.STELLAR_NETWORK as 'testnet' | 'mainnet') || 'testnet';
 const DEFAULT_ORIGIN = process.env.POLLAR_APP_ORIGIN || 'http://localhost:3000';
 
 // Polyfill browser environment for @pollar/core client runtime in Node.js

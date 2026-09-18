@@ -24,6 +24,7 @@ All CLI commands support `--json` for direct, structured ingestion by LLMs and a
 | **Help & Capabilities** | `nelax --help` | Complete command list and usage guides |
 | **Check Wallet & Balances** | `nelax wallet --json` | JSON with G-address, XLM balance, USDC balance, explorer URL |
 | **Fund with Testnet XLM** | `nelax fund` | Free +10,000 XLM from Stellar Testnet Friendbot |
+| **Discover Compute Nodes** | `nelax discover --json` | Query catalog of available GPUs, CPUs, VRAM, and XLM pricing |
 | **Rent GPU/Cloud Compute** | `nelax rent <machine-id> --json` | Handles HTTP 402, executes Stellar payment, returns SSH login |
 | **Generic x402 API Fetch** | `nelax fetch <url> --json` | Resolves HTTP 402 challenge automatically and returns payload |
 | **Send On-Chain Payment** | `nelax pay <address> <amount> [asset] --json` | Submits Stellar transaction and returns tx hash |
@@ -57,7 +58,43 @@ nelax wallet --json
 
 ---
 
-### 2. Auto-Rent GPU Compute via x402
+### 2. Discover Available Compute Nodes
+Before renting, an agent can query the live cluster catalog to select a machine based on hardware specs, VRAM, and price:
+```bash
+nelax discover --json
+# Or filter to only currently available nodes:
+nelax discover --available --json
+```
+**JSON Schema:**
+```json
+{
+  "success": true,
+  "network": "stellar:testnet",
+  "providerWallet": "GCWDVYVPM7ORTD5INWSP3C5TRV5TRBEIHZWY3K4HS3STLKJE5I7OSMVB",
+  "stats": {
+    "totalNodes": 4,
+    "availableNodes": 3,
+    "leasedNodes": 1,
+    "totalVramGb": 232
+  },
+  "machines": [
+    {
+      "id": "gpu-h100-01",
+      "name": "NVIDIA H100 80GB SXM5",
+      "gpu": "1x NVIDIA H100 SXM5 80GB HBM3",
+      "vram": "80 GB (3.35 TB/s)",
+      "cpu": "112 vCPU (AMD EPYC 9654)",
+      "ram": "480 GB DDR5 ECC",
+      "hourlyPriceXlm": "5.0",
+      "status": "available"
+    }
+  ]
+}
+```
+
+---
+
+### 3. Auto-Rent GPU Compute via x402
 When an agent encounters a compute-intensive task (e.g. model fine-tuning, heavy compilation, data scraping), it can provision an isolated VM instantly:
 ```bash
 nelax rent gpu-h100-01 --json

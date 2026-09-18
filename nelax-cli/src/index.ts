@@ -440,6 +440,96 @@ program
   );
 
 // ==========================================
+// Command: DISCOVER (Compute Catalog)
+// ==========================================
+program
+  .command("discover")
+  .alias("machines")
+  .alias("nodes")
+  .description("Discover available GPU/cloud compute nodes and pricing in the Nelax marketplace")
+  .option(
+    "-u, --url <url>",
+    "Base URL of the Nelax compute marketplace",
+    process.env.NELAX_MARKETPLACE_URL || "http://localhost:3000",
+  )
+  .option("--available", "Filter to only show currently available unleased nodes")
+  .option("--json", "Output result in JSON format")
+  .action(async (options: { url: string; available?: boolean; json?: boolean }) => {
+    const endpointUrl = `${options.url.replace(/\/$/, "")}/api/machines`;
+    const spinner = createSpinner(
+      "Querying Nelax compute marketplace catalog...",
+      options.json,
+    );
+
+    try {
+      const res = await fetch(endpointUrl);
+      spinner.stop();
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch compute catalog (HTTP ${res.status}): ${res.statusText}`);
+      }
+
+      const data: any = await res.json();
+      let machines = data.machines || [];
+
+      if (options.available) {
+        machines = machines.filter((m: any) => m.status === "available");
+      }
+
+      if (options.json) {
+        console.log(JSON.stringify({ ...data, machines }, null, 2));
+        return;
+      }
+
+      console.log("\n" + chalk.gray("─".repeat(74)));
+      console.log(
+        chalk.cyanBright.bold("  NELAX COMPUTE MARKETPLACE — DISCOVERED NODES  ") +
+          chalk.gray(`(${machines.length} nodes)`)
+      );
+      console.log(chalk.gray("─".repeat(74)));
+
+      for (const m of machines) {
+        const isAvail = m.status === "available";
+        const statusBadge = isAvail
+          ? chalk.bgGreen.black.bold(" AVAILABLE ")
+          : chalk.bgMagenta.black.bold(" LEASED ");
+
+        console.log(
+          `\n${statusBadge}  ${chalk.whiteBright.bold(m.name)}  ${chalk.yellow.bold(`(${m.id})`)}`
+        );
+        console.log(`  ${chalk.gray(m.tagline)}`);
+        if (m.gpu) {
+          console.log(`  • GPU:      ${chalk.cyan(m.gpu)} (${chalk.yellow(m.vram || "N/A")})`);
+        }
+        console.log(`  • CPU/RAM:  ${chalk.white(m.cpu)} | ${chalk.white(m.ram)}`);
+        console.log(`  • Storage:  ${chalk.white(m.storage)} | Uplink: ${chalk.white(m.networkSpeed)}`);
+        console.log(
+          `  • Pricing:  ${chalk.green.bold(`${m.hourlyPriceXlm} XLM / hr`)} ${chalk.gray(`(~$${m.hourlyPriceUsdc} USDC)`)}`
+        );
+        if (!isAvail && m.currentLease) {
+          console.log(
+            `  • Leased:   ${chalk.magenta(`By ${m.currentLease.agentWallet.slice(0, 10)}...`)} (Tx: ${m.currentLease.txHash.slice(0, 10)}...)`
+          );
+        }
+      }
+
+      console.log("\n" + chalk.gray("─".repeat(74)));
+      console.log(
+        chalk.yellow("Tip: ") +
+          chalk.white("To lease any node autonomously via x402, run: ") +
+          chalk.cyan.bold("nelax rent <machineId>")
+      );
+      console.log(chalk.gray("─".repeat(74)) + "\n");
+    } catch (err: any) {
+      spinner.fail(chalk.red(`Failed to discover machines: ${err.message}`));
+      if (options.json) {
+        console.log(JSON.stringify({ success: false, error: err.message }));
+      }
+      process.exit(1);
+    }
+  });
+
+// ==========================================
 // Command: RENT (x402 Autonomous Compute)
 // ==========================================
 program
@@ -725,8 +815,10 @@ ${chalk.yellow.bold("Examples for AI Agents & Developers:")}
   $ ${chalk.white("nelax verify 123456")}                       # Verify code & activate wallet
   $ ${chalk.white("nelax wallet")}                              # Check USDC & XLM testnet balances
   $ ${chalk.white("nelax wallet --json")}                       # Agent-friendly structured balance JSON
-  $ ${chalk.white("nelax pay G... 1.5 USDC")}                   # Direct on-chain Stellar payment
+  $ ${chalk.white("nelax discover")}                            # Discover available GPU and CPU nodes
+  $ ${chalk.white("nelax discover --json")}                     # Machine catalog as structured JSON
   $ ${chalk.white("nelax rent gpu-h100-01")}                    # Autonomously pay & rent compute via x402
+  $ ${chalk.white("nelax pay G... 1.5 USDC")}                   # Direct on-chain Stellar payment
   $ ${chalk.white("nelax fetch http://api.host/rent/cluster")}  # Autonomous x402 HTTP challenge resolver
   $ ${chalk.white("nelax history")}                             # View on-chain transaction history
   $ ${chalk.white("nelax logout")}                              # Clear local cached session

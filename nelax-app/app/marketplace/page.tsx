@@ -1090,6 +1090,8 @@ export default function MarketplacePage() {
                 <span className="text-cyan-300">$ nelax verify &lt;code&gt;</span>
                 <span className="text-zinc-500 mt-2"># Check balance on Stellar Horizon</span>
                 <span className="text-cyan-300">$ nelax wallet --json</span>
+                <span className="text-zinc-500 mt-2"># Discover available GPU and CPU nodes</span>
+                <span className="text-cyan-300">$ nelax discover --json</span>
                 <span className="text-zinc-500 mt-2"># Autonomously resolve 402 & lease compute</span>
                 <span className="text-emerald-400">$ nelax rent gpu-h100-01</span>
               </div>
