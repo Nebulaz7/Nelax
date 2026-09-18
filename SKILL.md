@@ -61,9 +61,14 @@ nelax wallet --json
 ### 2. Discover Available Compute Nodes
 Before renting, an agent can query the live cluster catalog to select a machine based on hardware specs, VRAM, and price:
 ```bash
+# 1. Standard human/CLI view with hardware specs, status badges & pricing:
+nelax discover
+
+# 2. Filter to only show unleased, ready-to-provision nodes:
+nelax discover --available
+
+# 3. Agent-friendly structured JSON output:
 nelax discover --json
-# Or filter to only currently available nodes:
-nelax discover --available --json
 ```
 **JSON Schema:**
 ```json
