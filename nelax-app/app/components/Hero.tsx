@@ -282,7 +282,7 @@ export default function Hero() {
       </div>
 
       {/* Marquee: Powered by Pollar & Decentralized Infrastructure (No Gradient Mask) */}
-      <div className="w-full mt-20">
+      {/* <div className="w-full mt-20">
         <p className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-8 text-center">
           Powered by Pollar Protocol &bull; Built for the Pollar Hackathon 2026
         </p>
@@ -299,7 +299,7 @@ export default function Hero() {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
     </section>
   );
 }
