@@ -1,0 +1,45 @@
+{
+  "name": "nelax",
+  "version": "0.1.0",
+  "description": "Autonomous AI Agent Wallets on Stellar powered by Pollar and x402",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "nelax": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node ./dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "nelax",
+    "stellar",
+    "pollar",
+    "x402",
+    "agentic-wallets",
+    "ai-agents",
+    "compute",
+    "openclaw",
+    "claude-code",
+    "hermes-agent",
+    "antigravity"
+  ],
+  "author": "Nelax Team",
+  "license": "MIT",
+  "dependencies": {
+    "@pollar/core": "^0.10.1",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "conf": "^13.1.0",
+    "dotenv": "^16.4.7",
+    "ora": "^8.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2"
+  }
+}

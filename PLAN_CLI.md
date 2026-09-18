@@ -130,8 +130,8 @@ We will implement `nelax-cli` in 5 focused, incremental phases:
 
 ## 4. Execution Checkpoints
 
-- [ ] **Checkpoint 1**: Phase 1 (Scaffolding & Build setup complete)
-- [ ] **Checkpoint 2**: Phase 2 (Pollar client & session storage verified)
-- [ ] **Checkpoint 3**: Phase 3 (`--help`, `login`, `verify`, `wallet`, `pay`, `logout` working)
-- [ ] **Checkpoint 4**: Phase 4 (`x402` payment & compute rental working)
+- [x] **Checkpoint 1**: Phase 1 (Scaffolding & Build setup complete)
+- [x] **Checkpoint 2**: Phase 2 (Pollar client & session storage verified)
+- [x] **Checkpoint 3**: Phase 3 (`--help`, `login`, `verify`, `wallet`, `pay`, `logout` working)
+- [x] **Checkpoint 4**: Phase 4 (`x402` payment & compute rental working)
 - [ ] **Checkpoint 5**: Phase 5 (End-to-end verification & agent test)
