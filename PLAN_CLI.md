@@ -8,7 +8,7 @@ This document outlines the step-by-step implementation plan for **`nelax-cli`**,
 
 * **Target Package**: `nelax-cli/`
 * **Command Name**: `nelax` (executable globally or via `npx nelax`)
-* **Primary Users**: AI Agents (Claude Code, OpenClaw, shell runtimes) and Developers.
+* **Primary Users**: AI Agents (Claude Code, OpenClaw, Hermes Agent, Antigravity, shell runtimes) and Developers.
 * **Network**: **Stellar Testnet** (`stellar:testnet`).
 * **Core Value**: Enables AI agents to autonomously manage non-custodial wallets, make direct Stellar payments, and pay for compute via the **x402** protocol without human UI interaction.
 
